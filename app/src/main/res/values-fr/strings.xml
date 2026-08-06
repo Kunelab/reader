@@ -92,7 +92,7 @@
 
     <!-- Chargement du livre -->
     <string name="error_load_failed">Échec du chargement du livre</string>
-    <string name="error_load_failed_detail">Échec du chargement du livre : %1$s</string>
+    <string name="error_access_lost">Ce livre n\'est plus accessible. Ouvrez-le à nouveau pour rétablir l\'accès.</string>
     <string name="error_cannot_open_file">Impossible d’ouvrir le fichier sélectionné</string>
     <string name="error_not_valid_epub">Fichier EPUB non valide</string>
     <string name="error_epub_missing_content">EPUB endommagé : fichier de contenu introuvable</string>

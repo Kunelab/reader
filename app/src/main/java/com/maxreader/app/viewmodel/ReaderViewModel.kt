@@ -1,10 +1,13 @@
 package com.maxreader.app.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.maxreader.app.R
+import com.maxreader.app.epub.EpubException
 import com.maxreader.app.epub.EpubParser
 import com.maxreader.app.library.Bookmark
 import com.maxreader.app.library.BookLibrary
@@ -14,15 +17,33 @@ import com.maxreader.app.rsvp.RsvpEngine
 import com.maxreader.app.rsvp.RsvpState
 import com.maxreader.app.settings.RsvpSettings
 import com.maxreader.app.settings.SettingsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.IOException
+
+private const val TAG = "ReaderViewModel"
+
+/**
+ * Supplies wording for anything the EPUB itself did not name. The parser leaves these
+ * blank so that it can stay free of Android resources.
+ */
+private fun BookData.withDisplayNames(app: Application): BookData = copy(
+    title = title.ifBlank { app.getString(R.string.unknown_title) },
+    author = author.ifBlank { app.getString(R.string.unknown_author) },
+    chapters = chapters.mapIndexed { index, chapter ->
+        if (chapter.title.isNotBlank()) chapter
+        else chapter.copy(title = app.getString(R.string.chapter_default, index + 1))
+    }
+)
 
 class ReaderViewModel(application: Application) : AndroidViewModel(application) {
 
-    val settingsRepo = SettingsRepository(application)
-    val engine = RsvpEngine()
-    val library = BookLibrary(application)
+    private val settingsRepo = SettingsRepository(application)
+    private val engine = RsvpEngine()
+    private val library = BookLibrary(application, viewModelScope)
 
     private val _bookData = MutableStateFlow<BookData?>(null)
     val bookData: StateFlow<BookData?> = _bookData.asStateFlow()
@@ -31,8 +52,22 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
 
     private var currentUri: Uri? = null
+    private var loadJob: Job? = null
+    private var settingsWrites: Job? = null
 
     val rsvpState: StateFlow<RsvpState> = engine.state
+
+    // The full state changes on every word. These slices change far less often, so the
+    // chrome that reads them is not dragged into 25 recompositions a second at high WPM.
+    val currentChapterTitle: StateFlow<String> = engine.state
+        .map { it.currentChapterTitle }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    val isPlaying: StateFlow<Boolean> = engine.state
+        .map { it.isPlaying }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val settings: StateFlow<RsvpSettings> = settingsRepo.settingsFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, RsvpSettings())
@@ -44,6 +79,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
+        viewModelScope.launch { library.load() }
         viewModelScope.launch {
             settings.collect { newSettings ->
                 engine.updateSettings(newSettings)
@@ -51,11 +87,35 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /**
+     * Opens a book the user picked, or one handed to us by another app. Takes a lasting
+     * hold on the read permission so the book can still be reopened from the library
+     * after the process is restarted.
+     */
+    fun openBook(uri: Uri) {
+        try {
+            getApplication<Application>().contentResolver
+                .takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (e: SecurityException) {
+            // Some providers do not offer a persistable grant. The book still opens now;
+            // it just may not be reopenable from the library later.
+            Log.w(TAG, "Could not persist read access to $uri", e)
+        }
+        loadBook(uri)
+    }
+
     fun loadBook(uri: Uri) {
-        viewModelScope.launch(Dispatchers.IO) {
+        // A second tap while a book is still parsing would race the first one.
+        if (loadJob?.isActive == true) return
+
+        loadJob = viewModelScope.launch(Dispatchers.IO) {
             _loadingState.value = LoadingState.Loading
+            val app = getApplication<Application>()
             try {
-                val book = EpubParser.parse(getApplication(), uri)
+                val parsed = app.contentResolver.openInputStream(uri)?.use { EpubParser.parse(it) }
+                    ?: throw IOException("Provider returned no stream for $uri")
+                val book = parsed.withDisplayNames(app)
+
                 _bookData.value = book
                 currentUri = uri
 
@@ -66,13 +126,28 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 engine.loadBook(book, startIndex)
                 library.loadBookmarks(uri)
                 _loadingState.value = LoadingState.Success
+            } catch (e: CancellationException) {
+                throw e // never report cancellation as a failure
+            } catch (e: SecurityException) {
+                Log.w(TAG, "Lost access to $uri", e)
+                _loadingState.value = LoadingState.Error(app.getString(R.string.error_access_lost))
+            } catch (e: EpubException.MissingContent) {
+                Log.w(TAG, "Damaged EPUB at $uri", e)
+                _loadingState.value =
+                    LoadingState.Error(app.getString(R.string.error_epub_missing_content))
+            } catch (e: EpubException) {
+                Log.w(TAG, "Not a usable EPUB at $uri", e)
+                _loadingState.value =
+                    LoadingState.Error(app.getString(R.string.error_not_valid_epub))
+            } catch (e: IOException) {
+                Log.w(TAG, "Could not read $uri", e)
+                _loadingState.value =
+                    LoadingState.Error(app.getString(R.string.error_cannot_open_file))
             } catch (e: Exception) {
-                val app = getApplication<Application>()
-                val detail = e.message
-                _loadingState.value = LoadingState.Error(
-                    if (detail.isNullOrBlank()) app.getString(R.string.error_load_failed)
-                    else app.getString(R.string.error_load_failed_detail, detail)
-                )
+                // Details go to logcat rather than the screen: exception text can carry
+                // full content:// paths, and it is not phrased for a reader anyway.
+                Log.e(TAG, "Failed to load $uri", e)
+                _loadingState.value = LoadingState.Error(app.getString(R.string.error_load_failed))
             }
         }
     }
@@ -93,6 +168,15 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     fun removeLibraryBook(uriString: String) {
         library.removeBook(uriString)
+        // Hand the grant back; the system caps how many an app may hold.
+        try {
+            getApplication<Application>().contentResolver.releasePersistableUriPermission(
+                Uri.parse(uriString),
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (e: SecurityException) {
+            Log.w(TAG, "No persisted permission to release for $uriString", e)
+        }
     }
 
     fun resetLoadingState() {
@@ -111,26 +195,18 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun skipForward() = engine.skipForward()
     fun skipBackward() = engine.skipBackward()
 
-    // Settings updates
-    fun setWpm(wpm: Int) = viewModelScope.launch { settingsRepo.updateWpm(wpm) }
-    fun setCommaPause(ms: Long) = viewModelScope.launch { settingsRepo.updateCommaPause(ms) }
-    fun setPeriodPause(ms: Long) = viewModelScope.launch { settingsRepo.updatePeriodPause(ms) }
-    fun setParagraphPause(ms: Long) = viewModelScope.launch { settingsRepo.updateParagraphPause(ms) }
-    fun setContextWordCount(count: Int) = viewModelScope.launch { settingsRepo.updateContextWordCount(count) }
-    fun setNextWordCount(count: Int) = viewModelScope.launch { settingsRepo.updateNextWordCount(count) }
-    fun setShowContext(show: Boolean) = viewModelScope.launch { settingsRepo.updateShowContext(show) }
-    fun setAdaptiveSpeed(enabled: Boolean) = viewModelScope.launch { settingsRepo.updateAdaptiveSpeed(enabled) }
-    fun setLengthThreshold(chars: Int) = viewModelScope.launch { settingsRepo.updateLengthThreshold(chars) }
-    fun setMsPerExtraChar(ms: Long) = viewModelScope.launch { settingsRepo.updateMsPerExtraChar(ms) }
-    fun setSpecialCharPenalty(ms: Long) = viewModelScope.launch { settingsRepo.updateSpecialCharPenalty(ms) }
-    fun setFontSize(size: Int) = viewModelScope.launch { settingsRepo.updateFontSize(size) }
-    fun setRampUpEnabled(enabled: Boolean) = viewModelScope.launch { settingsRepo.updateRampUpEnabled(enabled) }
-    fun setRampUpDuration(words: Int) = viewModelScope.launch { settingsRepo.updateRampUpDuration(words) }
-    fun setTheme(theme: String) = viewModelScope.launch { settingsRepo.updateTheme(theme) }
-    fun setFontFamily(family: String) = viewModelScope.launch { settingsRepo.updateFontFamily(family) }
-    fun setLetterSpacing(sp: Float) = viewModelScope.launch { settingsRepo.updateLetterSpacing(sp) }
-    fun setContextLineSpacing(sp: Float) = viewModelScope.launch { settingsRepo.updateContextLineSpacing(sp) }
-    fun setContextMargin(dp: Int) = viewModelScope.launch { settingsRepo.updateContextMargin(dp) }
+    /**
+     * Edits the stored settings, e.g. `updateSettings { it.copy(wpm = 400) }`.
+     *
+     * Writes are serialised through a single job. Dragging a slider used to launch a
+     * durable DataStore commit per pixel of travel, all racing each other.
+     */
+    fun updateSettings(transform: (RsvpSettings) -> RsvpSettings) {
+        settingsWrites = viewModelScope.launch {
+            settingsWrites?.join()
+            settingsRepo.update(transform)
+        }
+    }
 
     fun addBookmark(label: String) {
         val uri = currentUri ?: return

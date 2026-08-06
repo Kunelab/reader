@@ -2,7 +2,6 @@ package com.maxreader.app.ui.screens
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maxreader.app.R
 import com.maxreader.app.library.LibraryBook
+import com.maxreader.app.library.OpenPersistableDocument
 import com.maxreader.app.ui.theme.*
 import com.maxreader.app.viewmodel.LoadingState
 import com.maxreader.app.viewmodel.ReaderViewModel
@@ -42,9 +43,9 @@ fun HomeScreen(
     val tc = LocalThemeColors.current
 
     val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+        contract = OpenPersistableDocument()
     ) { uri: Uri? ->
-        uri?.let { viewModel.loadBook(it) }
+        uri?.let { viewModel.openBook(it) }
     }
 
     LaunchedEffect(loadingState) {
@@ -77,7 +78,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "MaxReader",
+                text = stringResource(R.string.app_name),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = tc.textPrimary
@@ -105,7 +106,7 @@ fun HomeScreen(
                 if (loadingState is LoadingState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
-                        color = TextPrimary,
+                        color = tc.textPrimary,
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(10.dp))
@@ -149,11 +150,16 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Sorted outside composition; this used to re-sort on every recomposition.
+                val recentFirst = remember(libraryBooks) {
+                    libraryBooks.sortedByDescending { it.lastOpenedTimestamp }
+                }
+
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(libraryBooks.sortedByDescending { it.lastOpenedTimestamp }) { book ->
+                    items(recentFirst, key = { it.uri }) { book ->
                         LibraryBookItem(
                             book = book,
                             onClick = {
@@ -208,7 +214,7 @@ private fun LibraryBookItem(
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     LinearProgressIndicator(
-                        progress = book.progressPercent,
+                        progress = { book.progressPercent },
                         modifier = Modifier
                             .weight(1f)
                             .height(3.dp),

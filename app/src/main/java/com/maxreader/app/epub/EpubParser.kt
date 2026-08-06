@@ -1,18 +1,43 @@
 package com.maxreader.app.epub
 
-import android.content.Context
-import android.net.Uri
-import com.maxreader.app.R
+import androidx.annotation.VisibleForTesting
 import com.maxreader.app.model.BookChapter
 import com.maxreader.app.model.BookData
 import com.maxreader.app.model.RsvpWord
 import org.jsoup.Jsoup
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
+/** Ceiling on a single inflated entry, and on all of them together. */
+private const val MAX_ENTRY_BYTES = 20 * 1_048_576
+private const val MAX_TOTAL_BYTES = 100L * 1_048_576
+
+/**
+ * Assets the parser never reads. Deliberately a denylist rather than an allowlist of
+ * markup extensions: spine entries occasionally carry unusual names, and skipping one
+ * would silently drop a chapter. Anything unrecognised is still read.
+ */
+private val SKIPPED_EXTENSIONS = listOf(
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tif", ".tiff", ".svg",
+    ".ttf", ".otf", ".woff", ".woff2", ".eot",
+    ".mp3", ".mp4", ".m4a", ".wav", ".ogg", ".webm", ".pdf",
+    ".css", ".js"
+)
+
+/** Compiled once; splitting on a fresh Regex per paragraph showed up when loading a book. */
+private val WHITESPACE = "\\s+".toRegex()
+
+/**
+ * Turns an EPUB archive into a flat stream of [RsvpWord]s.
+ *
+ * Plain Kotlin on purpose — no Context, no resources — so the tokenizing rules below can
+ * be unit tested on the JVM. Titles that the file does not supply come back blank; the
+ * caller substitutes whatever wording it wants to show.
+ */
 object EpubParser {
 
     private val PUNCTUATION_PAUSE = setOf(',', ';', ':')
@@ -42,7 +67,8 @@ object EpubParser {
      * Checks: known abbreviation list, single-letter initial (A. B. M.),
      * multiple internal dots (U.S.A.), and next-word-starts-lowercase heuristic.
      */
-    private fun isAbbreviation(word: String, nextWord: String?): Boolean {
+    @VisibleForTesting
+    internal fun isAbbreviation(word: String, nextWord: String?): Boolean {
         val stripped = word.trimEnd('"', '\'', '\u201D', '\u2019', ')', ']')
         val lower = stripped.lowercase()
 
@@ -83,7 +109,8 @@ object EpubParser {
     /**
      * Decides whether two adjacent tokens should be merged into one for RSVP display.
      */
-    private fun shouldMerge(current: String, next: String): Boolean {
+    @VisibleForTesting
+    internal fun shouldMerge(current: String, next: String): Boolean {
         // 1. Abbreviation + following word: "M." + "Sarkozy" → "M. Sarkozy"
         if (current.lastOrNull() == '.' && isAbbreviation(current, next)) return true
 
@@ -101,42 +128,73 @@ object EpubParser {
         return false
     }
 
-    fun parse(context: Context, uri: Uri): BookData {
-        val inputStream: InputStream = context.contentResolver.openInputStream(uri)
-            ?: throw IllegalArgumentException(context.getString(R.string.error_cannot_open_file))
-
-        return inputStream.use { stream ->
-            val entries = readZipEntries(stream)
-            parseEpub(context, entries)
-        }
+    fun parse(input: InputStream): BookData {
+        val entries = readZipEntries(input)
+        return parseEpub(entries)
     }
 
+    /**
+     * Reads only the entries the parser actually looks at, with a ceiling on how much is
+     * held at once.
+     *
+     * Previously every entry was inflated into memory, so a book's images and fonts --
+     * usually the bulk of an EPUB -- were decompressed and retained despite never being
+     * read, and a crafted archive could inflate without limit until the process died.
+     */
     private fun readZipEntries(stream: InputStream): Map<String, ByteArray> {
         val entries = mutableMapOf<String, ByteArray>()
-        val zis = ZipInputStream(stream)
-        var entry: ZipEntry? = zis.nextEntry
-        while (entry != null) {
-            if (!entry.isDirectory) {
-                entries[entry.name] = zis.readBytes()
+        var total = 0L
+
+        ZipInputStream(stream).use { zis ->
+            var entry: ZipEntry? = zis.nextEntry
+            while (entry != null) {
+                val name = entry.name
+                if (!entry.isDirectory && !isSkippableAsset(name)) {
+                    val bytes = zis.readBoundedBytes(MAX_ENTRY_BYTES, name)
+                    total += bytes.size
+                    if (total > MAX_TOTAL_BYTES) {
+                        throw EpubException.NotAnEpub("content exceeds ${MAX_TOTAL_BYTES / 1_048_576} MB")
+                    }
+                    entries[name] = bytes
+                }
+                zis.closeEntry()
+                entry = zis.nextEntry
             }
-            zis.closeEntry()
-            entry = zis.nextEntry
         }
-        zis.close()
         return entries
     }
 
-    private fun parseEpub(context: Context, entries: Map<String, ByteArray>): BookData {
-        val containerXml = entries["META-INF/container.xml"]
-            ?: throw IllegalArgumentException(context.getString(R.string.error_not_valid_epub))
+    /** True for images, fonts and media, which are the bulk of an EPUB and unread here. */
+    private fun isSkippableAsset(name: String): Boolean {
+        val lower = name.lowercase()
+        return SKIPPED_EXTENSIONS.any { lower.endsWith(it) }
+    }
 
-        val opfPath = parseContainerXml(context, String(containerXml, Charsets.UTF_8))
+    private fun InputStream.readBoundedBytes(limit: Int, name: String): ByteArray {
+        val buffer = ByteArrayOutputStream()
+        val chunk = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val read = read(chunk)
+            if (read == -1) break
+            if (buffer.size() + read > limit) {
+                throw EpubException.NotAnEpub("entry $name exceeds ${limit / 1_048_576} MB")
+            }
+            buffer.write(chunk, 0, read)
+        }
+        return buffer.toByteArray()
+    }
+
+    private fun parseEpub(entries: Map<String, ByteArray>): BookData {
+        val containerXml = entries["META-INF/container.xml"]
+            ?: throw EpubException.NotAnEpub("no META-INF/container.xml")
+
+        val opfPath = parseContainerXml(String(containerXml, Charsets.UTF_8))
         val opfDir = opfPath.substringBeforeLast('/', "")
 
         val opfContent = entries[opfPath]
-            ?: throw IllegalArgumentException(context.getString(R.string.error_epub_missing_content))
+            ?: throw EpubException.MissingContent(opfPath)
 
-        val opfData = parseOpf(context, String(opfContent, Charsets.UTF_8))
+        val opfData = parseOpf(String(opfContent, Charsets.UTF_8))
 
         var globalIdx = 0
         val chapters = opfData.spineItemPaths.mapIndexedNotNull { chapterIdx, relativePath ->
@@ -144,7 +202,7 @@ object EpubParser {
             val htmlBytes = entries[fullPath] ?: return@mapIndexedNotNull null
             val html = String(htmlBytes, Charsets.UTF_8)
 
-            parseChapter(context, html, chapterIdx, globalIdx).also { chapter ->
+            parseChapter(html, chapterIdx, globalIdx).also { chapter ->
                 globalIdx += chapter.words.size
             }
         }
@@ -156,7 +214,7 @@ object EpubParser {
         )
     }
 
-    private fun parseContainerXml(context: Context, xml: String): String {
+    private fun parseContainerXml(xml: String): String {
         val factory = XmlPullParserFactory.newInstance()
         factory.isNamespaceAware = true
         val parser = factory.newPullParser()
@@ -170,17 +228,18 @@ object EpubParser {
             }
             eventType = parser.next()
         }
-        throw IllegalArgumentException(context.getString(R.string.error_not_valid_epub))
+        throw EpubException.NotAnEpub("no rootfile in container.xml")
     }
 
-    private fun parseOpf(context: Context, xml: String): OpfData {
+    private fun parseOpf(xml: String): OpfData {
         val factory = XmlPullParserFactory.newInstance()
         factory.isNamespaceAware = true
         val parser = factory.newPullParser()
         parser.setInput(xml.reader())
 
-        var title = context.getString(R.string.unknown_title)
-        var author = context.getString(R.string.unknown_author)
+        // Left blank when the file does not say; the caller supplies wording.
+        var title = ""
+        var author = ""
         val manifest = mutableMapOf<String, String>()
         val spineIds = mutableListOf<String>()
 
@@ -245,7 +304,6 @@ object EpubParser {
     }
 
     private fun parseChapter(
-        context: Context,
         html: String,
         chapterIdx: Int,
         globalIdxStart: Int
@@ -262,19 +320,19 @@ object EpubParser {
         }
 
         if (paragraphs.isEmpty()) {
-            val bodyText = doc.body()?.text()?.trim() ?: ""
+            val bodyText = doc.body().text().trim()
             if (bodyText.isNotEmpty()) {
                 paragraphs.add(bodyText)
             }
         }
 
-        val chapterTitle = doc.select("h1, h2, h3").firstOrNull()?.text()
-            ?: context.getString(R.string.chapter_default, chapterIdx + 1)
+        // Blank when the chapter carries no heading; the caller names it.
+        val chapterTitle = doc.select("h1, h2, h3").firstOrNull()?.text().orEmpty()
 
         var globalIdx = globalIdxStart
         val words = mutableListOf<RsvpWord>()
         for (paragraph in paragraphs) {
-            val rawWords = paragraph.split("\\s+".toRegex()).filter { it.isNotBlank() }
+            val rawWords = paragraph.split(WHITESPACE).filter { it.isNotBlank() }
 
             // Pre-pass: merge tokens that make more sense together
             val merged = mutableListOf<String>()
@@ -320,7 +378,6 @@ object EpubParser {
 
         return BookChapter(
             title = chapterTitle,
-            paragraphs = paragraphs,
             words = words,
             isContentChapter = isContentChapter(chapterTitle, words.size)
         )

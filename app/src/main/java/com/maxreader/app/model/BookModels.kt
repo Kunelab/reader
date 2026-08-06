@@ -15,7 +15,6 @@ data class RsvpWord(
 
 data class BookChapter(
     val title: String,
-    val paragraphs: List<String>, // raw paragraph text
     val words: List<RsvpWord>,
     val isContentChapter: Boolean = true // false for cover, TOC, copyright, etc.
 )
@@ -29,8 +28,3 @@ data class BookData(
         chapters.flatMap { it.words }
     }
 }
-
-data class ReadingPosition(
-    val chapterIndex: Int = 0,
-    val wordIndex: Int = 0   // global word index
-)

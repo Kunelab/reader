@@ -7,6 +7,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+private const val NANOS_PER_MS = 1_000_000L
 
 data class RsvpState(
     val currentWord: RsvpWord? = null,
@@ -47,6 +51,9 @@ class RsvpEngine {
     private var rampUpStartIndex: Int = 0 // tracks where play() was started for ramp-up
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    /** Serialises play/pause so a stopping job can never overlap a starting one. */
+    private val playbackMutex = Mutex()
+
     fun loadBook(bookData: BookData, startIndex: Int = 0) {
         book = bookData
         allWords = bookData.allWords
@@ -57,84 +64,104 @@ class RsvpEngine {
         settings = newSettings
     }
 
+    /** Builds the visible state for [idx] without touching playback. */
+    private fun stateAt(idx: Int, isPlaying: Boolean): RsvpState {
+        val word = allWords[idx]
+        val contextStart = (idx - settings.contextWordCount + 1).coerceAtLeast(0)
+        val nextEnd = (idx + 1 + settings.nextWordCount).coerceAtMost(allWords.size)
+
+        return RsvpState(
+            currentWord = word,
+            lastWord = if (idx > 0) allWords[idx - 1] else null,
+            contextWords = allWords.subList(contextStart, idx + 1),
+            nextWords = if (idx + 1 < allWords.size) allWords.subList(idx + 1, nextEnd) else emptyList(),
+            isPlaying = isPlaying,
+            wordIndex = idx,
+            totalWords = allWords.size,
+            progressPercent = idx.toFloat() / allWords.size,
+            currentChapterTitle = book?.chapters?.getOrNull(word.chapterIndex)?.title ?: ""
+        )
+    }
+
+    /** How long [word] at [idx] should stay on screen, in milliseconds. */
+    private fun durationFor(word: RsvpWord, idx: Int): Long {
+        val targetDelay = 60_000L / settings.wpm
+
+        // Ramp-up: start at 50% speed and linearly reach full speed
+        val baseDelay = if (settings.rampUpEnabled) {
+            val wordsSinceStart = idx - rampUpStartIndex
+            if (wordsSinceStart < settings.rampUpDurationWords) {
+                val progress = wordsSinceStart.toFloat() / settings.rampUpDurationWords
+                // Lerp from 2x delay (50% speed) to 1x delay (full speed)
+                (targetDelay * (2f - progress)).toLong()
+            } else targetDelay
+        } else targetDelay
+
+        // Adaptive speed: extra time for long/complex words
+        val adaptiveDelay = if (settings.adaptiveSpeed) {
+            val extraChars = (word.text.length - settings.lengthThreshold).coerceAtLeast(0)
+            val lengthPenalty = extraChars * settings.msPerExtraChar
+
+            // Count special characters: - ' \u2019 \u2018 \u2014 \u2013 / and mid-word dots
+            val specialPenalty = word.text.count { it in SPECIAL_CHARS } * settings.specialCharPenaltyMs
+
+            lengthPenalty + specialPenalty
+        } else 0L
+
+        val punctuationDelay = when {
+            word.isEndOfSentence -> settings.periodPauseMs
+            word.isEndOfParagraph -> settings.paragraphPauseMs
+            word.endsWithPunctuation -> settings.commaPauseMs
+            else -> 0L
+        }
+
+        return baseDelay + punctuationDelay + adaptiveDelay
+    }
+
     fun play() {
         if (allWords.isEmpty()) return
         if (_state.value.isPlaying) return
 
         _state.value = _state.value.copy(isPlaying = true)
         rampUpStartIndex = _state.value.wordIndex
+
         playJob = scope.launch {
-            var idx = _state.value.wordIndex
-            while (isActive && idx < allWords.size) {
-                val word = allWords[idx]
-                val lastWord = if (idx > 0) allWords[idx - 1] else null
+            playbackMutex.withLock {
+                var idx = _state.value.wordIndex
 
-                // Build context: last N words up to and including current
-                val contextStart = (idx - settings.contextWordCount + 1).coerceAtLeast(0)
-                val contextWords = allWords.subList(contextStart, idx + 1)
+                // Schedule against a moving deadline rather than sleeping for the word's
+                // duration. A plain delay() ignores the time spent emitting state and
+                // recomposing, so that overhead accumulates and playback drifts steadily
+                // slower than the configured WPM.
+                var deadline = System.nanoTime()
 
-                val nextEnd = (idx + 1 + settings.nextWordCount).coerceAtMost(allWords.size)
-                val nextWords = if (idx + 1 < allWords.size) allWords.subList(idx + 1, nextEnd) else emptyList()
+                while (isActive && idx < allWords.size) {
+                    _state.value = stateAt(idx, isPlaying = true)
 
-                val chapterTitle = book?.chapters?.getOrNull(word.chapterIndex)?.title ?: ""
-
-                _state.value = RsvpState(
-                    currentWord = word,
-                    lastWord = lastWord,
-                    contextWords = contextWords,
-                    nextWords = nextWords,
-                    isPlaying = true,
-                    wordIndex = idx,
-                    totalWords = allWords.size,
-                    progressPercent = if (allWords.isNotEmpty()) idx.toFloat() / allWords.size else 0f,
-                    currentChapterTitle = chapterTitle
-                )
-
-                // Calculate delay
-                val targetDelay = 60_000L / settings.wpm
-
-                // Ramp-up: start at 50% speed and linearly reach full speed
-                val baseDelay = if (settings.rampUpEnabled) {
-                    val wordsSinceStart = idx - rampUpStartIndex
-                    if (wordsSinceStart < settings.rampUpDurationWords) {
-                        val progress = wordsSinceStart.toFloat() / settings.rampUpDurationWords
-                        // Lerp from 2x delay (50% speed) to 1x delay (full speed)
-                        (targetDelay * (2f - progress)).toLong()
-                    } else targetDelay
-                } else targetDelay
-
-                // Adaptive speed: extra time for long/complex words
-                val adaptiveDelay = if (settings.adaptiveSpeed) {
-                    val len = word.text.length
-                    val extraChars = (len - settings.lengthThreshold).coerceAtLeast(0)
-                    val lengthPenalty = extraChars * settings.msPerExtraChar
-
-                    // Count special characters: - ' \u2019 \u2018 \u2014 \u2013 / and mid-word dots
-                    val specialCount = word.text.count { it in SPECIAL_CHARS }
-                    val specialPenalty = specialCount * settings.specialCharPenaltyMs
-
-                    lengthPenalty + specialPenalty
-                } else 0L
-
-                val punctuationDelay = when {
-                    word.isEndOfSentence -> settings.periodPauseMs
-                    word.isEndOfParagraph -> settings.paragraphPauseMs
-                    word.endsWithPunctuation -> settings.commaPauseMs
-                    else -> 0L
+                    deadline += durationFor(allWords[idx], idx) * NANOS_PER_MS
+                    val remaining = (deadline - System.nanoTime()) / NANOS_PER_MS
+                    if (remaining > 0) {
+                        delay(remaining)
+                    } else {
+                        // Fell behind (slow frame, or the app was backgrounded). Give up the
+                        // lost time rather than sprinting through words to catch up.
+                        deadline = System.nanoTime()
+                    }
+                    idx++
                 }
 
-                delay(baseDelay + punctuationDelay + adaptiveDelay)
-                idx++
+                if (isActive) {
+                    // Reached the end of the book.
+                    _state.value = _state.value.copy(isPlaying = false)
+                }
             }
-
-            // Finished
-            _state.value = _state.value.copy(isPlaying = false)
         }
     }
 
     fun pause() {
-        playJob?.cancel()
+        val job = playJob
         playJob = null
+        job?.cancel()
         _state.value = _state.value.copy(isPlaying = false)
     }
 
@@ -143,33 +170,13 @@ class RsvpEngine {
     }
 
     fun seekTo(index: Int) {
+        if (allWords.isEmpty()) return
+
         val wasPlaying = _state.value.isPlaying
         pause()
 
-        val idx = index.coerceIn(0, (allWords.size - 1).coerceAtLeast(0))
-        if (allWords.isEmpty()) return
-
-        val word = allWords[idx]
-        val lastWord = if (idx > 0) allWords[idx - 1] else null
-        val contextStart = (idx - settings.contextWordCount + 1).coerceAtLeast(0)
-        val contextWords = allWords.subList(contextStart, idx + 1)
-
-        val nextEnd = (idx + 1 + settings.nextWordCount).coerceAtMost(allWords.size)
-        val nextWords = if (idx + 1 < allWords.size) allWords.subList(idx + 1, nextEnd) else emptyList()
-
-        val chapterTitle = book?.chapters?.getOrNull(word.chapterIndex)?.title ?: ""
-
-        _state.value = RsvpState(
-            currentWord = word,
-            lastWord = lastWord,
-            contextWords = contextWords,
-            nextWords = nextWords,
-            isPlaying = false,
-            wordIndex = idx,
-            totalWords = allWords.size,
-            progressPercent = idx.toFloat() / allWords.size,
-            currentChapterTitle = chapterTitle
-        )
+        val idx = index.coerceIn(0, allWords.size - 1)
+        _state.value = stateAt(idx, isPlaying = false)
 
         if (wasPlaying) play()
     }

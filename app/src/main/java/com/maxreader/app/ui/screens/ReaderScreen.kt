@@ -14,14 +14,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maxreader.app.R
+import com.maxreader.app.settings.RsvpSettings
 import com.maxreader.app.ui.components.RsvpWordDisplay
 import com.maxreader.app.ui.theme.*
 import com.maxreader.app.viewmodel.ReaderViewModel
@@ -33,9 +38,13 @@ fun ReaderScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    val rsvpState by viewModel.rsvpState.collectAsState()
+    // Deliberately no collect of the full rsvpState here. Reading it in this scope would
+    // pull the whole screen -- top bar, controls, dialogs -- into a recomposition on
+    // every word. Each consumer below collects the narrowest slice it needs instead.
     val settings by viewModel.settings.collectAsState()
     val bookData by viewModel.bookData.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState()
+    val chapterTitle by viewModel.currentChapterTitle.collectAsState()
     val tc = LocalThemeColors.current
 
     var showControls by remember { mutableStateOf(true) }
@@ -48,16 +57,28 @@ fun ReaderScreen(
 
     // Handle phone back button
     BackHandler {
-        viewModel.pause()
-        viewModel.saveCurrentProgress()
+        viewModel.pause() // also persists the current position
         onBack()
     }
 
     // Keep screen awake while playing
     val view = LocalView.current
-    DisposableEffect(rsvpState.isPlaying) {
-        view.keepScreenOn = rsvpState.isPlaying
+    DisposableEffect(isPlaying) {
+        view.keepScreenOn = isPlaying
         onDispose { view.keepScreenOn = false }
+    }
+
+    // Stop and persist when the app goes to the background, so a swipe-away or a
+    // low-memory kill does not discard the reading position.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.pause() // also persists the current position
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Surface(
@@ -76,9 +97,9 @@ fun ReaderScreen(
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
                             )
-                            if (rsvpState.currentChapterTitle.isNotEmpty()) {
+                            if (chapterTitle.isNotEmpty()) {
                                 Text(
-                                    text = rsvpState.currentChapterTitle,
+                                    text = chapterTitle,
                                     fontSize = 12.sp,
                                     color = tc.textSecondary,
                                     maxLines = 1
@@ -88,8 +109,7 @@ fun ReaderScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-                            viewModel.pause()
-                            viewModel.saveCurrentProgress()
+                            viewModel.pause() // also persists the current position
                             onBack()
                         }) {
                             Icon(
@@ -140,37 +160,22 @@ fun ReaderScreen(
                     .fillMaxWidth()
                     .clickable(
                         indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
+                        interactionSource = remember { MutableInteractionSource() },
+                        // Without these the primary control of the app is invisible to
+                        // TalkBack: it is a bare clickable Box with no announced purpose.
+                        onClickLabel = stringResource(R.string.cd_play_pause),
+                        role = Role.Button
                     ) {
                         viewModel.togglePlayPause()
                     },
                 contentAlignment = Alignment.Center
             ) {
-                RsvpWordDisplay(
-                    word = rsvpState.currentWord,
-                    contextWords = rsvpState.contextWords,
-                    nextWords = rsvpState.nextWords,
-                    fontSize = settings.fontSize,
-                    showContext = settings.showContext,
-                    fontFamily = settings.fontFamily,
-                    letterSpacing = settings.letterSpacing,
-                    contextLineSpacing = settings.contextLineSpacing,
-                    contextMargin = settings.contextMarginHorizontal
-                )
+                RsvpStage(viewModel = viewModel, settings = settings)
             }
 
             // Bottom controls
             if (showControls) {
-                // Progress bar
-                LinearProgressIndicator(
-                    progress = rsvpState.progressPercent,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .padding(horizontal = 16.dp),
-                    color = tc.accent,
-                    trackColor = tc.surface,
-                )
+                ReaderProgressBar(viewModel = viewModel)
 
                 // Compact control row — 3 equal columns
                 Row(
@@ -185,7 +190,10 @@ fun ReaderScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { viewModel.setWpm(settings.wpm - 25) }, modifier = Modifier.size(32.dp)) {
+                        IconButton(
+                            onClick = { viewModel.updateSettings { s -> s.copy(wpm = s.wpm - 25) } },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease_wpm), tint = tc.textPrimary, modifier = Modifier.size(16.dp))
                         }
                         Text(
@@ -194,7 +202,10 @@ fun ReaderScreen(
                             fontWeight = FontWeight.Bold,
                             color = tc.accent
                         )
-                        IconButton(onClick = { viewModel.setWpm(settings.wpm + 25) }, modifier = Modifier.size(32.dp)) {
+                        IconButton(
+                            onClick = { viewModel.updateSettings { s -> s.copy(wpm = s.wpm + 25) } },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase_wpm), tint = tc.textPrimary, modifier = Modifier.size(16.dp))
                         }
                     }
@@ -216,7 +227,7 @@ fun ReaderScreen(
                             )
                         ) {
                             Icon(
-                                imageVector = if (rsvpState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = stringResource(R.string.cd_play_pause),
                                 tint = tc.textPrimary,
                                 modifier = Modifier.size(26.dp)
@@ -234,15 +245,7 @@ fun ReaderScreen(
                             .clickable { showJumpToWord = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = stringResource(
-                                R.string.word_position,
-                                rsvpState.wordIndex + 1,
-                                rsvpState.totalWords
-                            ),
-                            fontSize = 11.sp,
-                            color = tc.textSecondary
-                        )
+                        WordCounter(viewModel = viewModel)
                     }
                 }
 
@@ -256,6 +259,7 @@ fun ReaderScreen(
 
     // Chapter list dialog
     if (showChapterList) {
+        val rsvpState by viewModel.rsvpState.collectAsState()
         val chapters = bookData?.chapters ?: emptyList()
         // Number only content chapters
         var chapterNum = 0
@@ -322,6 +326,7 @@ fun ReaderScreen(
 
     // Add bookmark dialog
     if (showAddBookmark) {
+        val rsvpState by viewModel.rsvpState.collectAsState()
         var label by remember { mutableStateOf("") }
         val defaultLabel = stringResource(R.string.bookmark_default_label, rsvpState.wordIndex + 1)
         AlertDialog(
@@ -437,6 +442,7 @@ fun ReaderScreen(
 
     // Jump to word dialog
     if (showJumpToWord) {
+        val rsvpState by viewModel.rsvpState.collectAsState()
         var jumpText by remember { mutableStateOf("${rsvpState.wordIndex + 1}") }
         AlertDialog(
             onDismissRequest = { showJumpToWord = false },
@@ -487,4 +493,55 @@ fun ReaderScreen(
             titleContentColor = tc.textPrimary
         )
     }
+}
+
+/**
+ * The word itself. Kept in its own composable so that collecting the per-word state
+ * invalidates only this subtree rather than the whole reader.
+ */
+@Composable
+private fun RsvpStage(viewModel: ReaderViewModel, settings: RsvpSettings) {
+    val rsvpState by viewModel.rsvpState.collectAsState()
+
+    RsvpWordDisplay(
+        word = rsvpState.currentWord,
+        contextWords = rsvpState.contextWords,
+        nextWords = rsvpState.nextWords,
+        fontSize = settings.fontSize,
+        showContext = settings.showContext,
+        fontFamily = settings.fontFamily,
+        letterSpacing = settings.letterSpacing,
+        contextLineSpacing = settings.contextLineSpacing,
+        contextMargin = settings.contextMarginHorizontal
+    )
+}
+
+/** Progress bar, isolated for the same reason as [RsvpStage]. */
+@Composable
+private fun ReaderProgressBar(viewModel: ReaderViewModel) {
+    val tc = LocalThemeColors.current
+    val rsvpState by viewModel.rsvpState.collectAsState()
+
+    LinearProgressIndicator(
+        progress = { rsvpState.progressPercent },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(3.dp)
+            .padding(horizontal = 16.dp),
+        color = tc.accent,
+        trackColor = tc.surface,
+    )
+}
+
+/** "current / total", isolated for the same reason as [RsvpStage]. */
+@Composable
+private fun WordCounter(viewModel: ReaderViewModel) {
+    val tc = LocalThemeColors.current
+    val rsvpState by viewModel.rsvpState.collectAsState()
+
+    Text(
+        text = stringResource(R.string.word_position, rsvpState.wordIndex + 1, rsvpState.totalWords),
+        fontSize = 11.sp,
+        color = tc.textSecondary
+    )
 }

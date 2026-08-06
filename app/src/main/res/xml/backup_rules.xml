@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup rules for Android 11 and below (API <= 30).
+  Mirrors data_extraction_rules.xml — see that file for the rationale.
+-->
+<full-backup-content>
+    <exclude domain="file" path="library.json" />
+    <exclude domain="file" path="bookmarks" />
+</full-backup-content>

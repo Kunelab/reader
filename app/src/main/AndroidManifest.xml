@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- No permissions needed: books are opened through the Storage Access Framework. -->
 
-    <application android:name=".MaxReaderApp" android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:localeConfig="@xml/locales_config" tools:targetApi="tiramisu" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.MaxReader">
+    <application android:name=".MaxReaderApp" android:allowBackup="true" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:localeConfig="@xml/locales_config" tools:targetApi="tiramisu" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.MaxReader">
 
         <activity android:name=".MainActivity" android:exported="true" android:theme="@style/Theme.MaxReader">
             <intent-filter>

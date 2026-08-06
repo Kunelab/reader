@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup rules for Android 12+ (API 31+).
+
+  Reading positions and bookmarks are excluded on purpose: they are a record of
+  what the user reads, and the content:// URIs they reference are grants tied to
+  this install, so they would not resolve on a restored device anyway.
+  Display/timing preferences are small and portable, so they are kept.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="library.json" />
+        <exclude domain="file" path="bookmarks" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="library.json" />
+        <exclude domain="file" path="bookmarks" />
+    </device-transfer>
+</data-extraction-rules>

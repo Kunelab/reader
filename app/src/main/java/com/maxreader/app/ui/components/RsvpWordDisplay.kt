@@ -4,12 +4,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -70,15 +72,19 @@ fun RsvpWordDisplay(
     }
     val fontSizeSp = effectiveFontSize.sp
 
-    // Use a reference character "M" to fix line height regardless of actual content
-    val referenceStyle = androidx.compose.ui.text.TextStyle(
-        fontSize = baseSize.sp,
-        fontFamily = resolvedFontFamily,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = letterSpacing.sp
-    )
-    val referenceLayout = textMeasurer.measure(text = "Mj", style = referenceStyle)
-    val fixedLineHeightDp = with(density) { referenceLayout.size.height.toDp() }
+    // Use a reference character "M" to fix line height regardless of actual content.
+    // Remembered because it depends only on the type settings, not on the word: at
+    // 1500 WPM this composable runs 25 times a second and each measure builds a layout.
+    val fixedLineHeightDp = remember(baseSize, resolvedFontFamily, letterSpacing, density) {
+        val referenceStyle = TextStyle(
+            fontSize = baseSize.sp,
+            fontFamily = resolvedFontFamily,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = letterSpacing.sp
+        )
+        val referenceLayout = textMeasurer.measure(text = "Mj", style = referenceStyle)
+        with(density) { referenceLayout.size.height.toDp() }
+    }
 
     // Box layout: word stays centered, context above, next words below
     Box(
@@ -111,24 +117,29 @@ fun RsvpWordDisplay(
             val orpChar = text[orpIdx].toString()
             val suffix = if (orpIdx + 1 < text.length) text.substring(orpIdx + 1) else ""
 
-            val textStyle = androidx.compose.ui.text.TextStyle(
-                fontSize = fontSizeSp,
-                fontFamily = resolvedFontFamily,
-                fontWeight = FontWeight.Normal,
-                letterSpacing = letterSpacing.sp
-            )
+            // Three more layouts per word, so keyed on everything that affects them.
+            // Repeating the same word (or pausing) then costs no measuring at all.
+            val offset = remember(text, orpIdx, fontSizeSp, resolvedFontFamily, letterSpacing, density) {
+                val textStyle = TextStyle(
+                    fontSize = fontSizeSp,
+                    fontFamily = resolvedFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    letterSpacing = letterSpacing.sp
+                )
 
-            val prefixLayout = textMeasurer.measure(text = prefix, style = textStyle)
-            val orpLayout = textMeasurer.measure(
-                text = orpChar,
-                style = textStyle.copy(fontWeight = FontWeight.ExtraBold)
-            )
-            val fullLayout = textMeasurer.measure(text = text, style = textStyle)
+                val prefixLayout = textMeasurer.measure(text = prefix, style = textStyle)
+                val orpLayout = textMeasurer.measure(
+                    text = orpChar,
+                    style = textStyle.copy(fontWeight = FontWeight.ExtraBold)
+                )
+                val fullLayout = textMeasurer.measure(text = text, style = textStyle)
 
-            val prefixWidthDp = with(density) { prefixLayout.size.width.toDp() }
-            val orpHalfWidthDp = with(density) { (orpLayout.size.width / 2).toDp() }
-            val fullHalfWidthDp = with(density) { (fullLayout.size.width / 2).toDp() }
-            val offset = fullHalfWidthDp - prefixWidthDp - orpHalfWidthDp
+                with(density) {
+                    (fullLayout.size.width / 2).toDp() -
+                        prefixLayout.size.width.toDp() -
+                        (orpLayout.size.width / 2).toDp()
+                }
+            }
 
             // Fixed-height box so the word never shifts vertically
             Box(

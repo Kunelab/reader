@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -149,11 +150,16 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Sorted outside composition; this used to re-sort on every recomposition.
+                val recentFirst = remember(libraryBooks) {
+                    libraryBooks.sortedByDescending { it.lastOpenedTimestamp }
+                }
+
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(libraryBooks.sortedByDescending { it.lastOpenedTimestamp }) { book ->
+                    items(recentFirst, key = { it.uri }) { book ->
                         LibraryBookItem(
                             book = book,
                             onClick = {
@@ -208,7 +214,7 @@ private fun LibraryBookItem(
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     LinearProgressIndicator(
-                        progress = book.progressPercent,
+                        progress = { book.progressPercent },
                         modifier = Modifier
                             .weight(1f)
                             .height(3.dp),

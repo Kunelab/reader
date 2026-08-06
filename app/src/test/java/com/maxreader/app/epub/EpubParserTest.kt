@@ -204,4 +204,40 @@ class EpubParserTest {
         val book = EpubParser.parse(epub(chapters = emptyMap()))
         assertTrue(book.chapters.isEmpty())
     }
+
+    @Test
+    fun `images and fonts are not inflated`() {
+        // A 30 MB image would trip the per-entry ceiling if it were read. Parsing
+        // succeeding proves the asset was skipped rather than loaded.
+        val book = EpubParser.parse(
+            epub(
+                chapters = mapOf(
+                    "OEBPS/chapter1.xhtml" to defaultChapter,
+                    "OEBPS/images/cover.jpg" to "x".repeat(30 * 1_048_576),
+                    "OEBPS/fonts/body.ttf" to "y".repeat(1_048_576)
+                )
+            )
+        )
+        assertEquals("The First Chapter", book.chapters.single().title)
+    }
+
+    @Test
+    fun `an oversized markup entry is rejected instead of exhausting memory`() {
+        val huge = "<html><body><p>" + "word ".repeat(5_000_000) + "</p></body></html>"
+        assertThrows(EpubException.NotAnEpub::class.java) {
+            EpubParser.parse(
+                epub(chapters = mapOf("OEBPS/chapter1.xhtml" to huge))
+            )
+        }
+    }
+
+    @Test
+    fun `a spine file with an unusual extension is still read`() {
+        // The skip rule is a denylist precisely so this keeps working.
+        val opf = defaultOpf.replace("chapter1.xhtml", "chapter1.txt")
+        val book = EpubParser.parse(
+            epub(opf = opf, chapters = mapOf("OEBPS/chapter1.txt" to defaultChapter))
+        )
+        assertEquals("The First Chapter", book.chapters.single().title)
+    }
 }

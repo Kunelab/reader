@@ -7,9 +7,29 @@ import com.maxreader.app.model.RsvpWord
 import org.jsoup.Jsoup
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
+
+/** Ceiling on a single inflated entry, and on all of them together. */
+private const val MAX_ENTRY_BYTES = 20 * 1_048_576
+private const val MAX_TOTAL_BYTES = 100L * 1_048_576
+
+/**
+ * Assets the parser never reads. Deliberately a denylist rather than an allowlist of
+ * markup extensions: spine entries occasionally carry unusual names, and skipping one
+ * would silently drop a chapter. Anything unrecognised is still read.
+ */
+private val SKIPPED_EXTENSIONS = listOf(
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tif", ".tiff", ".svg",
+    ".ttf", ".otf", ".woff", ".woff2", ".eot",
+    ".mp3", ".mp4", ".m4a", ".wav", ".ogg", ".webm", ".pdf",
+    ".css", ".js"
+)
+
+/** Compiled once; splitting on a fresh Regex per paragraph showed up when loading a book. */
+private val WHITESPACE = "\\s+".toRegex()
 
 /**
  * Turns an EPUB archive into a flat stream of [RsvpWord]s.
@@ -113,19 +133,55 @@ object EpubParser {
         return parseEpub(entries)
     }
 
+    /**
+     * Reads only the entries the parser actually looks at, with a ceiling on how much is
+     * held at once.
+     *
+     * Previously every entry was inflated into memory, so a book's images and fonts --
+     * usually the bulk of an EPUB -- were decompressed and retained despite never being
+     * read, and a crafted archive could inflate without limit until the process died.
+     */
     private fun readZipEntries(stream: InputStream): Map<String, ByteArray> {
         val entries = mutableMapOf<String, ByteArray>()
-        val zis = ZipInputStream(stream)
-        var entry: ZipEntry? = zis.nextEntry
-        while (entry != null) {
-            if (!entry.isDirectory) {
-                entries[entry.name] = zis.readBytes()
+        var total = 0L
+
+        ZipInputStream(stream).use { zis ->
+            var entry: ZipEntry? = zis.nextEntry
+            while (entry != null) {
+                val name = entry.name
+                if (!entry.isDirectory && !isSkippableAsset(name)) {
+                    val bytes = zis.readBoundedBytes(MAX_ENTRY_BYTES, name)
+                    total += bytes.size
+                    if (total > MAX_TOTAL_BYTES) {
+                        throw EpubException.NotAnEpub("content exceeds ${MAX_TOTAL_BYTES / 1_048_576} MB")
+                    }
+                    entries[name] = bytes
+                }
+                zis.closeEntry()
+                entry = zis.nextEntry
             }
-            zis.closeEntry()
-            entry = zis.nextEntry
         }
-        zis.close()
         return entries
+    }
+
+    /** True for images, fonts and media, which are the bulk of an EPUB and unread here. */
+    private fun isSkippableAsset(name: String): Boolean {
+        val lower = name.lowercase()
+        return SKIPPED_EXTENSIONS.any { lower.endsWith(it) }
+    }
+
+    private fun InputStream.readBoundedBytes(limit: Int, name: String): ByteArray {
+        val buffer = ByteArrayOutputStream()
+        val chunk = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val read = read(chunk)
+            if (read == -1) break
+            if (buffer.size() + read > limit) {
+                throw EpubException.NotAnEpub("entry $name exceeds ${limit / 1_048_576} MB")
+            }
+            buffer.write(chunk, 0, read)
+        }
+        return buffer.toByteArray()
     }
 
     private fun parseEpub(entries: Map<String, ByteArray>): BookData {
@@ -264,7 +320,7 @@ object EpubParser {
         }
 
         if (paragraphs.isEmpty()) {
-            val bodyText = doc.body()?.text()?.trim() ?: ""
+            val bodyText = doc.body().text().trim()
             if (bodyText.isNotEmpty()) {
                 paragraphs.add(bodyText)
             }
@@ -276,7 +332,7 @@ object EpubParser {
         var globalIdx = globalIdxStart
         val words = mutableListOf<RsvpWord>()
         for (paragraph in paragraphs) {
-            val rawWords = paragraph.split("\\s+".toRegex()).filter { it.isNotBlank() }
+            val rawWords = paragraph.split(WHITESPACE).filter { it.isNotBlank() }
 
             // Pre-pass: merge tokens that make more sense together
             val merged = mutableListOf<String>()
@@ -322,7 +378,6 @@ object EpubParser {
 
         return BookChapter(
             title = chapterTitle,
-            paragraphs = paragraphs,
             words = words,
             isContentChapter = isContentChapter(chapterTitle, words.size)
         )

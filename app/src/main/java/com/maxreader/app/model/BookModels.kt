@@ -15,7 +15,6 @@ data class RsvpWord(
 
 data class BookChapter(
     val title: String,
-    val paragraphs: List<String>, // raw paragraph text
     val words: List<RsvpWord>,
     val isContentChapter: Boolean = true // false for cover, TOC, copyright, etc.
 )

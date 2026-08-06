@@ -56,6 +56,18 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     val rsvpState: StateFlow<RsvpState> = engine.state
 
+    // The full state changes on every word. These slices change far less often, so the
+    // chrome that reads them is not dragged into 25 recompositions a second at high WPM.
+    val currentChapterTitle: StateFlow<String> = engine.state
+        .map { it.currentChapterTitle }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    val isPlaying: StateFlow<Boolean> = engine.state
+        .map { it.isPlaying }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val settings: StateFlow<RsvpSettings> = settingsRepo.settingsFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, RsvpSettings())
 

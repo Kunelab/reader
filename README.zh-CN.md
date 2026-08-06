@@ -29,12 +29,12 @@
 
 ```
 app/
-├── epub/           # EPUB 解析（epublib + Jsoup）
+├── epub/           # EPUB 解析（Jsoup + XmlPullParser）
 ├── model/          # 数据类（BookData、RsvpWord 等）
 ├── rsvp/           # RSVP 播放引擎（基于协程）
 ├── settings/       # DataStore 偏好设置
 ├── ui/
-│   ├── components/ # RsvpWordDisplay、ContextDisplay
+│   ├── components/ # RsvpWordDisplay
 │   ├── screens/    # HomeScreen、ReaderScreen、SettingsScreen
 │   └── theme/      # 深色主题配色
 └── viewmodel/      # ReaderViewModel

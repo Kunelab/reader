@@ -29,14 +29,14 @@ A fast, focused Android EPUB reader using **RSVP** (Rapid Serial Visual Presenta
 
 ```
 app/
-├── epub/           # EPUB parsing (epublib + Jsoup)
+├── epub/           # EPUB parsing (Jsoup + XmlPullParser)
 ├── model/          # Data classes (BookData, RsvpWord, etc.)
 ├── rsvp/           # RSVP playback engine (coroutine-based)
 ├── settings/       # DataStore preferences
 ├── ui/
-│   ├── components/ # RsvpWordDisplay, ContextDisplay
+│   ├── components/ # RsvpWordDisplay
 │   ├── screens/    # HomeScreen, ReaderScreen, SettingsScreen
-│   └── theme/      # Dark theme colors
+│   └── theme/      # Dark, AMOLED, Sepia and Light palettes
 └── viewmodel/      # ReaderViewModel
 ```
 

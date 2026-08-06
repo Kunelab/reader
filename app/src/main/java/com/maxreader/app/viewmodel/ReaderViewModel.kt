@@ -60,10 +60,11 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     /**
-     * Opens a book the user just picked. Takes a lasting hold on the read permission so
-     * the book can still be reopened from the library after the process is restarted.
+     * Opens a book the user picked, or one handed to us by another app. Takes a lasting
+     * hold on the read permission so the book can still be reopened from the library
+     * after the process is restarted.
      */
-    fun openPickedBook(uri: Uri) {
+    fun openBook(uri: Uri) {
         try {
             getApplication<Application>().contentResolver
                 .takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)

@@ -43,7 +43,8 @@ fun RsvpWordDisplay(
         else -> FontFamily.Monospace
     }
 
-    if (word == null) {
+    // An empty word would make the ORP coerce below collapse to an empty range and throw.
+    if (word == null || word.text.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 text = stringResource(R.string.reader_empty),

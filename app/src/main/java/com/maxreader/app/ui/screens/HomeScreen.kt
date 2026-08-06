@@ -44,7 +44,7 @@ fun HomeScreen(
     val filePicker = rememberLauncherForActivityResult(
         contract = OpenPersistableDocument()
     ) { uri: Uri? ->
-        uri?.let { viewModel.openPickedBook(it) }
+        uri?.let { viewModel.openBook(it) }
     }
 
     LaunchedEffect(loadingState) {

@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.MaxReader" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#FF1A1A2E</item>
-        <item name="android:navigationBarColor">#FF1A1A2E</item>
-    </style>
+    <!--
+      The system bars are drawn by Compose under enableEdgeToEdge(), so this theme
+      deliberately sets no bar colours. It used to pin them to the dark theme's
+      background, which was wrong for the Light and Sepia themes and ignored under
+      edge-to-edge anyway.
+    -->
+    <style name="Theme.MaxReader" parent="android:Theme.Material.NoActionBar" />
 </resources>

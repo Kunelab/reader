@@ -78,7 +78,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "MaxReader",
+                text = stringResource(R.string.app_name),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = tc.textPrimary
@@ -106,7 +106,7 @@ fun HomeScreen(
                 if (loadingState is LoadingState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
-                        color = TextPrimary,
+                        color = tc.textPrimary,
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(10.dp))

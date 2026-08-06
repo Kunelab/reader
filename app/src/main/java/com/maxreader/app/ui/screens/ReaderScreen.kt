@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.text.font.FontWeight
@@ -159,7 +160,11 @@ fun ReaderScreen(
                     .fillMaxWidth()
                     .clickable(
                         indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
+                        interactionSource = remember { MutableInteractionSource() },
+                        // Without these the primary control of the app is invisible to
+                        // TalkBack: it is a bare clickable Box with no announced purpose.
+                        onClickLabel = stringResource(R.string.cd_play_pause),
+                        role = Role.Button
                     ) {
                         viewModel.togglePlayPause()
                     },
@@ -185,7 +190,10 @@ fun ReaderScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { viewModel.setWpm(settings.wpm - 25) }, modifier = Modifier.size(32.dp)) {
+                        IconButton(
+                            onClick = { viewModel.updateSettings { s -> s.copy(wpm = s.wpm - 25) } },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease_wpm), tint = tc.textPrimary, modifier = Modifier.size(16.dp))
                         }
                         Text(
@@ -194,7 +202,10 @@ fun ReaderScreen(
                             fontWeight = FontWeight.Bold,
                             color = tc.accent
                         )
-                        IconButton(onClick = { viewModel.setWpm(settings.wpm + 25) }, modifier = Modifier.size(32.dp)) {
+                        IconButton(
+                            onClick = { viewModel.updateSettings { s -> s.copy(wpm = s.wpm + 25) } },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase_wpm), tint = tc.textPrimary, modifier = Modifier.size(16.dp))
                         }
                     }

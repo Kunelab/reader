@@ -28,8 +28,3 @@ data class BookData(
         chapters.flatMap { it.words }
     }
 }
-
-data class ReadingPosition(
-    val chapterIndex: Int = 0,
-    val wordIndex: Int = 0   // global word index
-)

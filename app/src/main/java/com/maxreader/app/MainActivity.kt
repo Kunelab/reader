@@ -35,13 +35,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: ReaderViewModel = viewModel()
             val settings by viewModel.settings.collectAsState()
-            val appTheme = try {
-                AppTheme.valueOf(settings.theme)
-            } catch (_: IllegalArgumentException) {
-                AppTheme.DARK
-            }
 
-            MaxReaderTheme(appTheme = appTheme) {
+            MaxReaderTheme(appTheme = settings.theme) {
                 val incoming by pendingBook.collectAsState()
                 LaunchedEffect(incoming) {
                     incoming?.let {

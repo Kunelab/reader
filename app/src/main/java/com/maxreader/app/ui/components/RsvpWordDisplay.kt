@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maxreader.app.R
 import com.maxreader.app.model.RsvpWord
+import com.maxreader.app.settings.FontChoice
 import com.maxreader.app.ui.theme.*
 
 @Composable
@@ -31,7 +32,7 @@ fun RsvpWordDisplay(
     nextWords: List<RsvpWord> = emptyList(),
     fontSize: Int,
     showContext: Boolean,
-    fontFamily: String = "monospace",
+    fontFamily: FontChoice = FontChoice.MONOSPACE,
     letterSpacing: Float = 0f,
     contextLineSpacing: Float = 1.2f,
     contextMargin: Int = 24,
@@ -40,9 +41,9 @@ fun RsvpWordDisplay(
     val tc = LocalThemeColors.current
 
     val resolvedFontFamily = when (fontFamily) {
-        "serif" -> FontFamily.Serif
-        "sans-serif" -> FontFamily.SansSerif
-        else -> FontFamily.Monospace
+        FontChoice.SERIF -> FontFamily.Serif
+        FontChoice.SANS_SERIF -> FontFamily.SansSerif
+        FontChoice.MONOSPACE -> FontFamily.Monospace
     }
 
     // An empty word would make the ORP coerce below collapse to an empty range and throw.

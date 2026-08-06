@@ -53,6 +53,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     private var currentUri: Uri? = null
     private var loadJob: Job? = null
+    private var settingsWrites: Job? = null
 
     val rsvpState: StateFlow<RsvpState> = engine.state
 
@@ -194,26 +195,18 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     fun skipForward() = engine.skipForward()
     fun skipBackward() = engine.skipBackward()
 
-    // Settings updates
-    fun setWpm(wpm: Int) = viewModelScope.launch { settingsRepo.updateWpm(wpm) }
-    fun setCommaPause(ms: Long) = viewModelScope.launch { settingsRepo.updateCommaPause(ms) }
-    fun setPeriodPause(ms: Long) = viewModelScope.launch { settingsRepo.updatePeriodPause(ms) }
-    fun setParagraphPause(ms: Long) = viewModelScope.launch { settingsRepo.updateParagraphPause(ms) }
-    fun setContextWordCount(count: Int) = viewModelScope.launch { settingsRepo.updateContextWordCount(count) }
-    fun setNextWordCount(count: Int) = viewModelScope.launch { settingsRepo.updateNextWordCount(count) }
-    fun setShowContext(show: Boolean) = viewModelScope.launch { settingsRepo.updateShowContext(show) }
-    fun setAdaptiveSpeed(enabled: Boolean) = viewModelScope.launch { settingsRepo.updateAdaptiveSpeed(enabled) }
-    fun setLengthThreshold(chars: Int) = viewModelScope.launch { settingsRepo.updateLengthThreshold(chars) }
-    fun setMsPerExtraChar(ms: Long) = viewModelScope.launch { settingsRepo.updateMsPerExtraChar(ms) }
-    fun setSpecialCharPenalty(ms: Long) = viewModelScope.launch { settingsRepo.updateSpecialCharPenalty(ms) }
-    fun setFontSize(size: Int) = viewModelScope.launch { settingsRepo.updateFontSize(size) }
-    fun setRampUpEnabled(enabled: Boolean) = viewModelScope.launch { settingsRepo.updateRampUpEnabled(enabled) }
-    fun setRampUpDuration(words: Int) = viewModelScope.launch { settingsRepo.updateRampUpDuration(words) }
-    fun setTheme(theme: String) = viewModelScope.launch { settingsRepo.updateTheme(theme) }
-    fun setFontFamily(family: String) = viewModelScope.launch { settingsRepo.updateFontFamily(family) }
-    fun setLetterSpacing(sp: Float) = viewModelScope.launch { settingsRepo.updateLetterSpacing(sp) }
-    fun setContextLineSpacing(sp: Float) = viewModelScope.launch { settingsRepo.updateContextLineSpacing(sp) }
-    fun setContextMargin(dp: Int) = viewModelScope.launch { settingsRepo.updateContextMargin(dp) }
+    /**
+     * Edits the stored settings, e.g. `updateSettings { it.copy(wpm = 400) }`.
+     *
+     * Writes are serialised through a single job. Dragging a slider used to launch a
+     * durable DataStore commit per pixel of travel, all racing each other.
+     */
+    fun updateSettings(transform: (RsvpSettings) -> RsvpSettings) {
+        settingsWrites = viewModelScope.launch {
+            settingsWrites?.join()
+            settingsRepo.update(transform)
+        }
+    }
 
     fun addBookmark(label: String) {
         val uri = currentUri ?: return

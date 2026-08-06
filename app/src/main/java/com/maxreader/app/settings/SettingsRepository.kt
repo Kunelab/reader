@@ -7,12 +7,16 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.maxreader.app.ui.theme.AppTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "rsvp_settings")
+
+/** The typeface options offered for the RSVP word. */
+enum class FontChoice { MONOSPACE, SANS_SERIF, SERIF }
 
 data class RsvpSettings(
     val wpm: Int = 300,
@@ -29,16 +33,39 @@ data class RsvpSettings(
     val fontSize: Int = 42,
     val rampUpEnabled: Boolean = true,
     val rampUpDurationWords: Int = 15,
-    val theme: String = "DARK",
-    val fontFamily: String = "monospace",
+    val theme: AppTheme = AppTheme.DARK,
+    val fontFamily: FontChoice = FontChoice.MONOSPACE,
     val letterSpacing: Float = 0f,
     val contextLineSpacing: Float = 1.2f,
     val contextMarginHorizontal: Int = 24
 )
 
+/**
+ * Clamps every value to a range the reader can actually display.
+ *
+ * Kept in one place so the bounds are visible together; they used to be spread across
+ * nineteen near-identical update methods.
+ */
+private fun RsvpSettings.coerced(): RsvpSettings = copy(
+    wpm = wpm.coerceIn(50, 1500),
+    commaPauseMs = commaPauseMs.coerceIn(0, 2000),
+    periodPauseMs = periodPauseMs.coerceIn(0, 3000),
+    paragraphPauseMs = paragraphPauseMs.coerceIn(0, 5000),
+    lengthThreshold = lengthThreshold.coerceIn(3, 15),
+    msPerExtraChar = msPerExtraChar.coerceIn(0, 100),
+    specialCharPenaltyMs = specialCharPenaltyMs.coerceIn(0, 200),
+    contextWordCount = contextWordCount.coerceIn(1, 50),
+    nextWordCount = nextWordCount.coerceIn(0, 50),
+    fontSize = fontSize.coerceIn(20, 80),
+    rampUpDurationWords = rampUpDurationWords.coerceIn(5, 50),
+    letterSpacing = letterSpacing.coerceIn(-2f, 5f),
+    contextLineSpacing = contextLineSpacing.coerceIn(0.8f, 3f),
+    contextMarginHorizontal = contextMarginHorizontal.coerceIn(0, 80)
+)
+
 class SettingsRepository(private val context: Context) {
 
-    companion object {
+    private companion object {
         val KEY_WPM = intPreferencesKey("wpm")
         val KEY_COMMA_PAUSE = longPreferencesKey("comma_pause_ms")
         val KEY_PERIOD_PAUSE = longPreferencesKey("period_pause_ms")
@@ -50,7 +77,6 @@ class SettingsRepository(private val context: Context) {
         val KEY_CONTEXT_WORD_COUNT = intPreferencesKey("context_word_count")
         val KEY_NEXT_WORD_COUNT = intPreferencesKey("next_word_count")
         val KEY_SHOW_CONTEXT = booleanPreferencesKey("show_context")
-        val KEY_SHOW_LAST_WORD = booleanPreferencesKey("show_last_word")
         val KEY_FONT_SIZE = intPreferencesKey("font_size")
         val KEY_RAMP_UP_ENABLED = booleanPreferencesKey("ramp_up_enabled")
         val KEY_RAMP_UP_DURATION = intPreferencesKey("ramp_up_duration_words")
@@ -59,105 +85,89 @@ class SettingsRepository(private val context: Context) {
         val KEY_LETTER_SPACING = intPreferencesKey("letter_spacing_x10")  // stored as int * 10
         val KEY_CONTEXT_LINE_SPACING = intPreferencesKey("context_line_spacing_x10")
         val KEY_CONTEXT_MARGIN = intPreferencesKey("context_margin_horizontal")
+
+        /** Falls back to the default if the stored name is not one we recognise. */
+        inline fun <reified T : Enum<T>> String?.toEnumOr(fallback: T): T =
+            this?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: fallback
     }
+
+    private val defaults = RsvpSettings()
 
     val settingsFlow: Flow<RsvpSettings> = context.dataStore.data.map { prefs ->
         RsvpSettings(
-            wpm = prefs[KEY_WPM] ?: 300,
-            commaPauseMs = prefs[KEY_COMMA_PAUSE] ?: 150L,
-            periodPauseMs = prefs[KEY_PERIOD_PAUSE] ?: 300L,
-            paragraphPauseMs = prefs[KEY_PARAGRAPH_PAUSE] ?: 400L,
-            adaptiveSpeed = prefs[KEY_ADAPTIVE_SPEED] ?: true,
-            lengthThreshold = prefs[KEY_LENGTH_THRESHOLD] ?: 6,
-            msPerExtraChar = prefs[KEY_MS_PER_EXTRA_CHAR] ?: 12L,
-            specialCharPenaltyMs = prefs[KEY_SPECIAL_CHAR_PENALTY] ?: 30L,
-            contextWordCount = prefs[KEY_CONTEXT_WORD_COUNT] ?: 5,
-            nextWordCount = prefs[KEY_NEXT_WORD_COUNT] ?: 3,
-            showContext = prefs[KEY_SHOW_CONTEXT] ?: true,
-            fontSize = prefs[KEY_FONT_SIZE] ?: 42,
-            rampUpEnabled = prefs[KEY_RAMP_UP_ENABLED] ?: true,
-            rampUpDurationWords = prefs[KEY_RAMP_UP_DURATION] ?: 15,
-            theme = prefs[KEY_THEME] ?: "DARK",
-            fontFamily = prefs[KEY_FONT_FAMILY] ?: "monospace",
+            wpm = prefs[KEY_WPM] ?: defaults.wpm,
+            commaPauseMs = prefs[KEY_COMMA_PAUSE] ?: defaults.commaPauseMs,
+            periodPauseMs = prefs[KEY_PERIOD_PAUSE] ?: defaults.periodPauseMs,
+            paragraphPauseMs = prefs[KEY_PARAGRAPH_PAUSE] ?: defaults.paragraphPauseMs,
+            adaptiveSpeed = prefs[KEY_ADAPTIVE_SPEED] ?: defaults.adaptiveSpeed,
+            lengthThreshold = prefs[KEY_LENGTH_THRESHOLD] ?: defaults.lengthThreshold,
+            msPerExtraChar = prefs[KEY_MS_PER_EXTRA_CHAR] ?: defaults.msPerExtraChar,
+            specialCharPenaltyMs = prefs[KEY_SPECIAL_CHAR_PENALTY] ?: defaults.specialCharPenaltyMs,
+            contextWordCount = prefs[KEY_CONTEXT_WORD_COUNT] ?: defaults.contextWordCount,
+            nextWordCount = prefs[KEY_NEXT_WORD_COUNT] ?: defaults.nextWordCount,
+            showContext = prefs[KEY_SHOW_CONTEXT] ?: defaults.showContext,
+            fontSize = prefs[KEY_FONT_SIZE] ?: defaults.fontSize,
+            rampUpEnabled = prefs[KEY_RAMP_UP_ENABLED] ?: defaults.rampUpEnabled,
+            rampUpDurationWords = prefs[KEY_RAMP_UP_DURATION] ?: defaults.rampUpDurationWords,
+            theme = prefs[KEY_THEME].toEnumOr(defaults.theme),
+            fontFamily = prefs[KEY_FONT_FAMILY].toEnumOr(defaults.fontFamily),
             letterSpacing = (prefs[KEY_LETTER_SPACING] ?: 0) / 10f,
             contextLineSpacing = (prefs[KEY_CONTEXT_LINE_SPACING] ?: 12) / 10f,
-            contextMarginHorizontal = prefs[KEY_CONTEXT_MARGIN] ?: 24
+            contextMarginHorizontal = prefs[KEY_CONTEXT_MARGIN] ?: defaults.contextMarginHorizontal
         )
     }
 
-    suspend fun updateWpm(wpm: Int) {
-        context.dataStore.edit { it[KEY_WPM] = wpm.coerceIn(50, 1500) }
-    }
+    /**
+     * Applies [transform] to the stored settings and writes the result.
+     *
+     * One entry point instead of a setter per field: the setters were nineteen copies of
+     * the same three lines, and each mapped to its own method on the ViewModel.
+     */
+    suspend fun update(transform: (RsvpSettings) -> RsvpSettings) {
+        context.dataStore.edit { prefs ->
+            val current = RsvpSettings(
+                wpm = prefs[KEY_WPM] ?: defaults.wpm,
+                commaPauseMs = prefs[KEY_COMMA_PAUSE] ?: defaults.commaPauseMs,
+                periodPauseMs = prefs[KEY_PERIOD_PAUSE] ?: defaults.periodPauseMs,
+                paragraphPauseMs = prefs[KEY_PARAGRAPH_PAUSE] ?: defaults.paragraphPauseMs,
+                adaptiveSpeed = prefs[KEY_ADAPTIVE_SPEED] ?: defaults.adaptiveSpeed,
+                lengthThreshold = prefs[KEY_LENGTH_THRESHOLD] ?: defaults.lengthThreshold,
+                msPerExtraChar = prefs[KEY_MS_PER_EXTRA_CHAR] ?: defaults.msPerExtraChar,
+                specialCharPenaltyMs = prefs[KEY_SPECIAL_CHAR_PENALTY] ?: defaults.specialCharPenaltyMs,
+                contextWordCount = prefs[KEY_CONTEXT_WORD_COUNT] ?: defaults.contextWordCount,
+                nextWordCount = prefs[KEY_NEXT_WORD_COUNT] ?: defaults.nextWordCount,
+                showContext = prefs[KEY_SHOW_CONTEXT] ?: defaults.showContext,
+                fontSize = prefs[KEY_FONT_SIZE] ?: defaults.fontSize,
+                rampUpEnabled = prefs[KEY_RAMP_UP_ENABLED] ?: defaults.rampUpEnabled,
+                rampUpDurationWords = prefs[KEY_RAMP_UP_DURATION] ?: defaults.rampUpDurationWords,
+                theme = prefs[KEY_THEME].toEnumOr(defaults.theme),
+                fontFamily = prefs[KEY_FONT_FAMILY].toEnumOr(defaults.fontFamily),
+                letterSpacing = (prefs[KEY_LETTER_SPACING] ?: 0) / 10f,
+                contextLineSpacing = (prefs[KEY_CONTEXT_LINE_SPACING] ?: 12) / 10f,
+                contextMarginHorizontal = prefs[KEY_CONTEXT_MARGIN] ?: defaults.contextMarginHorizontal
+            )
 
-    suspend fun updateCommaPause(ms: Long) {
-        context.dataStore.edit { it[KEY_COMMA_PAUSE] = ms.coerceIn(0, 2000) }
-    }
+            val next = transform(current).coerced()
 
-    suspend fun updatePeriodPause(ms: Long) {
-        context.dataStore.edit { it[KEY_PERIOD_PAUSE] = ms.coerceIn(0, 3000) }
-    }
-
-    suspend fun updateParagraphPause(ms: Long) {
-        context.dataStore.edit { it[KEY_PARAGRAPH_PAUSE] = ms.coerceIn(0, 5000) }
-    }
-
-    suspend fun updateContextWordCount(count: Int) {
-        context.dataStore.edit { it[KEY_CONTEXT_WORD_COUNT] = count.coerceIn(1, 50) }
-    }
-
-    suspend fun updateNextWordCount(count: Int) {
-        context.dataStore.edit { it[KEY_NEXT_WORD_COUNT] = count.coerceIn(0, 50) }
-    }
-
-    suspend fun updateShowContext(show: Boolean) {
-        context.dataStore.edit { it[KEY_SHOW_CONTEXT] = show }
-    }
-
-    suspend fun updateAdaptiveSpeed(enabled: Boolean) {
-        context.dataStore.edit { it[KEY_ADAPTIVE_SPEED] = enabled }
-    }
-
-    suspend fun updateLengthThreshold(chars: Int) {
-        context.dataStore.edit { it[KEY_LENGTH_THRESHOLD] = chars.coerceIn(3, 15) }
-    }
-
-    suspend fun updateMsPerExtraChar(ms: Long) {
-        context.dataStore.edit { it[KEY_MS_PER_EXTRA_CHAR] = ms.coerceIn(0, 100) }
-    }
-
-    suspend fun updateSpecialCharPenalty(ms: Long) {
-        context.dataStore.edit { it[KEY_SPECIAL_CHAR_PENALTY] = ms.coerceIn(0, 200) }
-    }
-
-    suspend fun updateFontSize(size: Int) {
-        context.dataStore.edit { it[KEY_FONT_SIZE] = size.coerceIn(20, 80) }
-    }
-
-    suspend fun updateRampUpEnabled(enabled: Boolean) {
-        context.dataStore.edit { it[KEY_RAMP_UP_ENABLED] = enabled }
-    }
-
-    suspend fun updateRampUpDuration(words: Int) {
-        context.dataStore.edit { it[KEY_RAMP_UP_DURATION] = words.coerceIn(5, 50) }
-    }
-
-    suspend fun updateTheme(theme: String) {
-        context.dataStore.edit { it[KEY_THEME] = theme }
-    }
-
-    suspend fun updateFontFamily(family: String) {
-        context.dataStore.edit { it[KEY_FONT_FAMILY] = family }
-    }
-
-    suspend fun updateLetterSpacing(sp: Float) {
-        context.dataStore.edit { it[KEY_LETTER_SPACING] = (sp * 10).toInt().coerceIn(-20, 50) }
-    }
-
-    suspend fun updateContextLineSpacing(sp: Float) {
-        context.dataStore.edit { it[KEY_CONTEXT_LINE_SPACING] = (sp * 10).toInt().coerceIn(8, 30) }
-    }
-
-    suspend fun updateContextMargin(dp: Int) {
-        context.dataStore.edit { it[KEY_CONTEXT_MARGIN] = dp.coerceIn(0, 80) }
+            prefs[KEY_WPM] = next.wpm
+            prefs[KEY_COMMA_PAUSE] = next.commaPauseMs
+            prefs[KEY_PERIOD_PAUSE] = next.periodPauseMs
+            prefs[KEY_PARAGRAPH_PAUSE] = next.paragraphPauseMs
+            prefs[KEY_ADAPTIVE_SPEED] = next.adaptiveSpeed
+            prefs[KEY_LENGTH_THRESHOLD] = next.lengthThreshold
+            prefs[KEY_MS_PER_EXTRA_CHAR] = next.msPerExtraChar
+            prefs[KEY_SPECIAL_CHAR_PENALTY] = next.specialCharPenaltyMs
+            prefs[KEY_CONTEXT_WORD_COUNT] = next.contextWordCount
+            prefs[KEY_NEXT_WORD_COUNT] = next.nextWordCount
+            prefs[KEY_SHOW_CONTEXT] = next.showContext
+            prefs[KEY_FONT_SIZE] = next.fontSize
+            prefs[KEY_RAMP_UP_ENABLED] = next.rampUpEnabled
+            prefs[KEY_RAMP_UP_DURATION] = next.rampUpDurationWords
+            prefs[KEY_THEME] = next.theme.name
+            prefs[KEY_FONT_FAMILY] = next.fontFamily.name
+            prefs[KEY_LETTER_SPACING] = (next.letterSpacing * 10).toInt()
+            prefs[KEY_CONTEXT_LINE_SPACING] = (next.contextLineSpacing * 10).toInt()
+            prefs[KEY_CONTEXT_MARGIN] = next.contextMarginHorizontal
+        }
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maxreader.app.R
+import com.maxreader.app.settings.FontChoice
 import com.maxreader.app.ui.theme.*
 import com.maxreader.app.viewmodel.ReaderViewModel
 
@@ -69,10 +70,10 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     themes.forEach { theme ->
-                        val isSelected = settings.theme == theme.name
+                        val isSelected = settings.theme == theme
                         val previewColors = themeColorsFor(theme)
                         OutlinedButton(
-                            onClick = { viewModel.setTheme(theme.name) },
+                            onClick = { viewModel.updateSettings { s -> s.copy(theme = theme) } },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(8.dp),
                             border = BorderStroke(
@@ -103,14 +104,14 @@ fun SettingsScreen(
                     valueText = stringResource(R.string.value_wpm, settings.wpm),
                     range = 50f..1500f,
                     steps = 57,
-                    onValueChange = { viewModel.setWpm(it.toInt()) },
+                    onValueChange = { viewModel.updateSettings { s -> s.copy(wpm = it.toInt()) } },
                     tc = tc
                 )
 
                 SwitchSetting(
                     label = stringResource(R.string.setting_ramp_up),
                     checked = settings.rampUpEnabled,
-                    onCheckedChange = { viewModel.setRampUpEnabled(it) },
+                    onCheckedChange = { viewModel.updateSettings { s -> s.copy(rampUpEnabled = it) } },
                     tc = tc
                 )
 
@@ -125,7 +126,7 @@ fun SettingsScreen(
                         ),
                         range = 5f..50f,
                         steps = 8,
-                        onValueChange = { viewModel.setRampUpDuration(it.toInt()) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(rampUpDurationWords = it.toInt()) } },
                         tc = tc
                     )
                 }
@@ -133,7 +134,7 @@ fun SettingsScreen(
                 SwitchSetting(
                     label = stringResource(R.string.setting_adaptive_speed),
                     checked = settings.adaptiveSpeed,
-                    onCheckedChange = { viewModel.setAdaptiveSpeed(it) },
+                    onCheckedChange = { viewModel.updateSettings { s -> s.copy(adaptiveSpeed = it) } },
                     tc = tc
                 )
 
@@ -148,7 +149,7 @@ fun SettingsScreen(
                         ),
                         range = 3f..15f,
                         steps = 11,
-                        onValueChange = { viewModel.setLengthThreshold(it.toInt()) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(lengthThreshold = it.toInt()) } },
                         tc = tc
                     )
 
@@ -158,7 +159,7 @@ fun SettingsScreen(
                         valueText = stringResource(R.string.value_ms, settings.msPerExtraChar),
                         range = 0f..100f,
                         steps = 19,
-                        onValueChange = { viewModel.setMsPerExtraChar(it.toLong()) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(msPerExtraChar = it.toLong()) } },
                         tc = tc
                     )
 
@@ -168,7 +169,7 @@ fun SettingsScreen(
                         valueText = stringResource(R.string.value_ms, settings.specialCharPenaltyMs),
                         range = 0f..200f,
                         steps = 19,
-                        onValueChange = { viewModel.setSpecialCharPenalty(it.toLong()) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(specialCharPenaltyMs = it.toLong()) } },
                         tc = tc
                     )
                 }
@@ -180,7 +181,7 @@ fun SettingsScreen(
                     label = stringResource(R.string.setting_comma_pause),
                     value = settings.commaPauseMs,
                     suffix = stringResource(R.string.unit_ms),
-                    onValueChange = { viewModel.setCommaPause(it) },
+                    onValueChange = { viewModel.updateSettings { s -> s.copy(commaPauseMs = it) } },
                     tc = tc
                 )
 
@@ -188,7 +189,7 @@ fun SettingsScreen(
                     label = stringResource(R.string.setting_period_pause),
                     value = settings.periodPauseMs,
                     suffix = stringResource(R.string.unit_ms),
-                    onValueChange = { viewModel.setPeriodPause(it) },
+                    onValueChange = { viewModel.updateSettings { s -> s.copy(periodPauseMs = it) } },
                     tc = tc
                 )
 
@@ -196,7 +197,7 @@ fun SettingsScreen(
                     label = stringResource(R.string.setting_paragraph_pause),
                     value = settings.paragraphPauseMs,
                     suffix = stringResource(R.string.unit_ms),
-                    onValueChange = { viewModel.setParagraphPause(it) },
+                    onValueChange = { viewModel.updateSettings { s -> s.copy(paragraphPauseMs = it) } },
                     tc = tc
                 )
 
@@ -209,16 +210,16 @@ fun SettingsScreen(
                     valueText = stringResource(R.string.value_sp, settings.fontSize),
                     range = 20f..80f,
                     steps = 29,
-                    onValueChange = { viewModel.setFontSize(it.toInt()) },
+                    onValueChange = { viewModel.updateSettings { s -> s.copy(fontSize = it.toInt()) } },
                     tc = tc
                 )
 
                 // Font family picker — the stored value is the CSS-style family name,
                 // the label next to it is what the user sees.
                 val fontOptions = listOf(
-                    "monospace" to R.string.font_monospace,
-                    "sans-serif" to R.string.font_sans_serif,
-                    "serif" to R.string.font_serif
+                    FontChoice.MONOSPACE to R.string.font_monospace,
+                    FontChoice.SANS_SERIF to R.string.font_sans_serif,
+                    FontChoice.SERIF to R.string.font_serif
                 )
                 Text(text = stringResource(R.string.setting_font), color = tc.textPrimary, fontSize = 15.sp)
                 Row(
@@ -228,7 +229,7 @@ fun SettingsScreen(
                     fontOptions.forEach { (font, labelRes) ->
                         val isSelected = settings.fontFamily == font
                         OutlinedButton(
-                            onClick = { viewModel.setFontFamily(font) },
+                            onClick = { viewModel.updateSettings { s -> s.copy(fontFamily = font) } },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(8.dp),
                             border = BorderStroke(
@@ -252,14 +253,14 @@ fun SettingsScreen(
                     valueText = stringResource(R.string.value_sp_decimal, settings.letterSpacing),
                     range = -2f..5f,
                     steps = 13,
-                    onValueChange = { viewModel.setLetterSpacing(it) },
+                    onValueChange = { viewModel.updateSettings { s -> s.copy(letterSpacing = it) } },
                     tc = tc
                 )
 
                 SwitchSetting(
                     label = stringResource(R.string.setting_show_context),
                     checked = settings.showContext,
-                    onCheckedChange = { viewModel.setShowContext(it) },
+                    onCheckedChange = { viewModel.updateSettings { s -> s.copy(showContext = it) } },
                     tc = tc
                 )
 
@@ -274,7 +275,7 @@ fun SettingsScreen(
                         ),
                         range = 1f..50f,
                         steps = 48,
-                        onValueChange = { viewModel.setContextWordCount(it.toInt()) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(contextWordCount = it.toInt()) } },
                         tc = tc
                     )
 
@@ -288,7 +289,7 @@ fun SettingsScreen(
                         ),
                         range = 0f..50f,
                         steps = 49,
-                        onValueChange = { viewModel.setNextWordCount(it.toInt()) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(nextWordCount = it.toInt()) } },
                         tc = tc
                     )
 
@@ -298,7 +299,7 @@ fun SettingsScreen(
                         valueText = stringResource(R.string.value_multiplier, settings.contextLineSpacing),
                         range = 0.8f..3f,
                         steps = 21,
-                        onValueChange = { viewModel.setContextLineSpacing(it) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(contextLineSpacing = it) } },
                         tc = tc
                     )
 
@@ -308,7 +309,7 @@ fun SettingsScreen(
                         valueText = stringResource(R.string.value_dp, settings.contextMarginHorizontal),
                         range = 0f..80f,
                         steps = 15,
-                        onValueChange = { viewModel.setContextMargin(it.toInt()) },
+                        onValueChange = { viewModel.updateSettings { s -> s.copy(contextMarginHorizontal = it.toInt()) } },
                         tc = tc
                     )
                 }

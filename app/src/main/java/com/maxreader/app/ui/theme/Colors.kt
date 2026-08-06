@@ -72,13 +72,5 @@ fun themeColorsFor(theme: AppTheme): ThemeColors = when (theme) {
 
 val LocalThemeColors = compositionLocalOf { DarkThemeColors }
 
-// Legacy color references — these point to default Dark theme
-// Existing code references them but we'll migrate to LocalThemeColors
-val DarkBackground = Color(0xFF1A1A2E)
-val DarkSurface = Color(0xFF16213E)
-val AccentRed = Color(0xFFE94560)
+/** Material's secondary slot, which none of the four themes vary. */
 val AccentBlue = Color(0xFF0F3460)
-val TextPrimary = Color(0xFFEEEEEE)
-val TextSecondary = Color(0xFF888888)
-val TextMuted = Color(0xFF555555)
-val OrpColor = Color(0xFFE94560)

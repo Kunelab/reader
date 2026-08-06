@@ -2,7 +2,6 @@ package com.maxreader.app.ui.screens
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maxreader.app.R
 import com.maxreader.app.library.LibraryBook
+import com.maxreader.app.library.OpenPersistableDocument
 import com.maxreader.app.ui.theme.*
 import com.maxreader.app.viewmodel.LoadingState
 import com.maxreader.app.viewmodel.ReaderViewModel
@@ -42,9 +42,9 @@ fun HomeScreen(
     val tc = LocalThemeColors.current
 
     val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+        contract = OpenPersistableDocument()
     ) { uri: Uri? ->
-        uri?.let { viewModel.loadBook(it) }
+        uri?.let { viewModel.openPickedBook(it) }
     }
 
     LaunchedEffect(loadingState) {

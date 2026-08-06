@@ -48,8 +48,7 @@ fun ReaderScreen(
 
     // Handle phone back button
     BackHandler {
-        viewModel.pause()
-        viewModel.saveCurrentProgress()
+        viewModel.pause() // also persists the current position
         onBack()
     }
 
@@ -88,8 +87,7 @@ fun ReaderScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-                            viewModel.pause()
-                            viewModel.saveCurrentProgress()
+                            viewModel.pause() // also persists the current position
                             onBack()
                         }) {
                             Icon(

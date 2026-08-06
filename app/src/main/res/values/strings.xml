@@ -94,6 +94,7 @@
 
     <!-- Book loading -->
     <string name="error_load_failed">Failed to load book</string>
+    <string name="error_access_lost">This book is no longer accessible. Open it again to restore access.</string>
     <string name="error_load_failed_detail">Failed to load book: %1$s</string>
     <string name="error_cannot_open_file">Cannot open the selected file</string>
     <string name="error_not_valid_epub">Not a valid EPUB file</string>

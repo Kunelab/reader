@@ -1,7 +1,9 @@
 package com.maxreader.app.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.maxreader.app.R
@@ -14,15 +16,19 @@ import com.maxreader.app.rsvp.RsvpEngine
 import com.maxreader.app.rsvp.RsvpState
 import com.maxreader.app.settings.RsvpSettings
 import com.maxreader.app.settings.SettingsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+private const val TAG = "ReaderViewModel"
+
 class ReaderViewModel(application: Application) : AndroidViewModel(application) {
 
-    val settingsRepo = SettingsRepository(application)
-    val engine = RsvpEngine()
-    val library = BookLibrary(application)
+    private val settingsRepo = SettingsRepository(application)
+    private val engine = RsvpEngine()
+    private val library = BookLibrary(application, viewModelScope)
 
     private val _bookData = MutableStateFlow<BookData?>(null)
     val bookData: StateFlow<BookData?> = _bookData.asStateFlow()
@@ -31,6 +37,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
 
     private var currentUri: Uri? = null
+    private var loadJob: Job? = null
 
     val rsvpState: StateFlow<RsvpState> = engine.state
 
@@ -44,6 +51,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
+        viewModelScope.launch { library.load() }
         viewModelScope.launch {
             settings.collect { newSettings ->
                 engine.updateSettings(newSettings)
@@ -51,11 +59,31 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /**
+     * Opens a book the user just picked. Takes a lasting hold on the read permission so
+     * the book can still be reopened from the library after the process is restarted.
+     */
+    fun openPickedBook(uri: Uri) {
+        try {
+            getApplication<Application>().contentResolver
+                .takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (e: SecurityException) {
+            // Some providers do not offer a persistable grant. The book still opens now;
+            // it just may not be reopenable from the library later.
+            Log.w(TAG, "Could not persist read access to $uri", e)
+        }
+        loadBook(uri)
+    }
+
     fun loadBook(uri: Uri) {
-        viewModelScope.launch(Dispatchers.IO) {
+        // A second tap while a book is still parsing would race the first one.
+        if (loadJob?.isActive == true) return
+
+        loadJob = viewModelScope.launch(Dispatchers.IO) {
             _loadingState.value = LoadingState.Loading
+            val app = getApplication<Application>()
             try {
-                val book = EpubParser.parse(getApplication(), uri)
+                val book = EpubParser.parse(app, uri)
                 _bookData.value = book
                 currentUri = uri
 
@@ -66,8 +94,13 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 engine.loadBook(book, startIndex)
                 library.loadBookmarks(uri)
                 _loadingState.value = LoadingState.Success
+            } catch (e: CancellationException) {
+                throw e // never report cancellation as a failure
+            } catch (e: SecurityException) {
+                Log.w(TAG, "Lost access to $uri", e)
+                _loadingState.value = LoadingState.Error(app.getString(R.string.error_access_lost))
             } catch (e: Exception) {
-                val app = getApplication<Application>()
+                Log.e(TAG, "Failed to load $uri", e)
                 val detail = e.message
                 _loadingState.value = LoadingState.Error(
                     if (detail.isNullOrBlank()) app.getString(R.string.error_load_failed)
@@ -93,6 +126,15 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
 
     fun removeLibraryBook(uriString: String) {
         library.removeBook(uriString)
+        // Hand the grant back; the system caps how many an app may hold.
+        try {
+            getApplication<Application>().contentResolver.releasePersistableUriPermission(
+                Uri.parse(uriString),
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (e: SecurityException) {
+            Log.w(TAG, "No persisted permission to release for $uriString", e)
+        }
     }
 
     fun resetLoadingState() {

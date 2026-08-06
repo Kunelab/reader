@@ -1,0 +1,102 @@
+<resources>
+
+    <!-- Pantalla de inicio -->
+    <string name="home_subtitle">Lector rápido RSVP</string>
+    <string name="action_open_epub">Abrir EPUB</string>
+    <string name="action_loading">Cargando…</string>
+    <string name="action_settings">Ajustes</string>
+    <string name="header_recent_books">Libros recientes</string>
+    <string name="cd_remove_book">Quitar</string>
+
+    <!-- Pantalla de lectura -->
+    <string name="reader_empty">Toca para abrir un libro</string>
+    <string name="cd_back">Atrás</string>
+    <string name="cd_add_bookmark">Añadir marcador</string>
+    <string name="cd_bookmarks">Marcadores</string>
+    <string name="cd_chapters">Capítulos</string>
+    <string name="cd_settings">Ajustes</string>
+    <string name="cd_decrease_wpm">Reducir velocidad</string>
+    <string name="cd_increase_wpm">Aumentar velocidad</string>
+    <string name="cd_rewind">Retroceder</string>
+    <string name="cd_play_pause">Reproducir o pausar</string>
+    <string name="cd_forward">Avanzar</string>
+    <string name="cd_remove_bookmark">Eliminar marcador</string>
+
+    <!-- Diálogos -->
+    <string name="dialog_chapters_title">Capítulos</string>
+    <string name="dialog_bookmarks_title">Marcadores</string>
+    <string name="dialog_add_bookmark_title">Añadir marcador</string>
+    <string name="dialog_jump_title">Ir a la palabra</string>
+    <string name="bookmark_position">Palabra %1$d — %2$s</string>
+    <string name="bookmark_label_hint">Etiqueta (opcional)</string>
+    <string name="bookmark_default_label">Palabra %1$d</string>
+    <string name="bookmarks_empty">Aún no hay marcadores</string>
+    <string name="jump_prompt">Introduce el número de palabra (1–%1$d)</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_close">Cerrar</string>
+    <string name="action_go">Ir</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="section_theme">Tema</string>
+    <string name="section_speed">Velocidad</string>
+    <string name="section_punctuation">Pausas de puntuación</string>
+    <string name="section_display">Pantalla</string>
+
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_amoled">Negro AMOLED</string>
+    <string name="theme_sepia">Sepia</string>
+    <string name="theme_light">Claro</string>
+
+    <string name="setting_wpm">Palabras por minuto</string>
+    <string name="value_wpm">%1$d ppm</string>
+    <string name="setting_ramp_up">Aceleración progresiva</string>
+    <string name="setting_ramp_up_words">Palabras de aceleración</string>
+    <plurals name="value_words">
+        <item quantity="one">%1$d palabra</item>
+        <item quantity="many">%1$d de palabras</item>
+        <item quantity="other">%1$d palabras</item>
+    </plurals>
+    <string name="setting_adaptive_speed">Velocidad adaptativa</string>
+    <string name="setting_length_threshold">Umbral de longitud</string>
+    <plurals name="value_chars">
+        <item quantity="one">%1$d carácter</item>
+        <item quantity="many">%1$d de caracteres</item>
+        <item quantity="other">%1$d caracteres</item>
+    </plurals>
+    <string name="setting_ms_per_char">Ms adicionales por carácter</string>
+    <string name="value_ms">%1$d ms</string>
+    <string name="setting_special_char_penalty">Penalización por carácter especial</string>
+
+    <string name="setting_comma_pause">Pausa de coma / punto y coma / dos puntos</string>
+    <string name="setting_period_pause">Pausa de punto / ! / ?</string>
+    <string name="setting_paragraph_pause">Pausa de salto de párrafo</string>
+    <string name="unit_ms">ms</string>
+
+    <string name="setting_font_size">Tamaño de fuente</string>
+    <string name="value_sp">%1$d sp</string>
+    <string name="setting_font">Fuente</string>
+    <string name="font_monospace">Monoespaciada</string>
+    <string name="font_sans_serif">Sin serifa</string>
+    <string name="font_serif">Con serifa</string>
+    <string name="setting_letter_spacing">Espaciado entre letras</string>
+    <string name="value_sp_decimal">%1$.1f sp</string>
+    <string name="setting_show_context">Mostrar palabras de contexto</string>
+    <string name="setting_previous_words">Palabras anteriores</string>
+    <string name="setting_next_words">Palabras siguientes</string>
+    <string name="setting_context_line_spacing">Interlineado del contexto</string>
+    <string name="value_multiplier">%1$.1f×</string>
+    <string name="setting_context_margins">Márgenes del contexto</string>
+    <string name="value_dp">%1$d dp</string>
+
+    <!-- Carga del libro -->
+    <string name="error_load_failed">No se pudo cargar el libro</string>
+    <string name="error_load_failed_detail">No se pudo cargar el libro: %1$s</string>
+    <string name="error_cannot_open_file">No se puede abrir el archivo seleccionado</string>
+    <string name="error_not_valid_epub">El archivo no es un EPUB válido</string>
+    <string name="error_epub_missing_content">EPUB dañado: no se encontró el archivo de contenido</string>
+    <string name="unknown_title">Título desconocido</string>
+    <string name="unknown_author">Autor desconocido</string>
+    <string name="chapter_default">Capítulo %1$d</string>
+</resources>

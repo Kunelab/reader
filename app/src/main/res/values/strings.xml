@@ -1,3 +1,104 @@
 <resources>
-    <string name="app_name">MaxReader</string>
+    <string name="app_name" translatable="false">MaxReader</string>
+
+    <!-- Home screen -->
+    <string name="home_subtitle">RSVP Speed Reader</string>
+    <string name="action_open_epub">Open EPUB</string>
+    <string name="action_loading">Loading…</string>
+    <string name="action_settings">Settings</string>
+    <string name="header_recent_books">Recent books</string>
+    <string name="progress_percent" translatable="false">%1$d%%</string>
+    <string name="cd_remove_book">Remove</string>
+
+    <!-- Reader screen -->
+    <string name="reader_empty">Tap to open a book</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_add_bookmark">Add bookmark</string>
+    <string name="cd_bookmarks">Bookmarks</string>
+    <string name="cd_chapters">Chapters</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_decrease_wpm">Decrease speed</string>
+    <string name="cd_increase_wpm">Increase speed</string>
+    <string name="cd_rewind">Skip back</string>
+    <string name="cd_play_pause">Play or pause</string>
+    <string name="cd_forward">Skip forward</string>
+    <string name="cd_remove_bookmark">Remove bookmark</string>
+    <string name="word_position" translatable="false">%1$d/%2$d</string>
+    <string name="chapter_numbered_title" translatable="false">%1$d. %2$s</string>
+
+    <!-- Reader dialogs -->
+    <string name="dialog_chapters_title">Chapters</string>
+    <string name="dialog_bookmarks_title">Bookmarks</string>
+    <string name="dialog_add_bookmark_title">Add bookmark</string>
+    <string name="dialog_jump_title">Jump to word</string>
+    <string name="bookmark_position">Word %1$d — %2$s</string>
+    <string name="bookmark_label_hint">Label (optional)</string>
+    <string name="bookmark_default_label">Word %1$d</string>
+    <string name="bookmarks_empty">No bookmarks yet</string>
+    <string name="jump_prompt">Enter word number (1–%1$d)</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_go">Go</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="section_theme">Theme</string>
+    <string name="section_speed">Speed</string>
+    <string name="section_punctuation">Punctuation pauses</string>
+    <string name="section_display">Display</string>
+
+    <string name="theme_dark">Dark</string>
+    <string name="theme_amoled">AMOLED Black</string>
+    <string name="theme_sepia">Sepia</string>
+    <string name="theme_light">Light</string>
+
+    <string name="setting_wpm">Words per minute</string>
+    <string name="value_wpm">%1$d WPM</string>
+    <string name="setting_ramp_up">Speed ramp-up</string>
+    <string name="setting_ramp_up_words">Ramp-up words</string>
+    <plurals name="value_words">
+        <item quantity="one">%1$d word</item>
+        <item quantity="other">%1$d words</item>
+    </plurals>
+    <string name="setting_adaptive_speed">Adaptive speed</string>
+    <string name="setting_length_threshold">Length threshold</string>
+    <plurals name="value_chars">
+        <item quantity="one">%1$d char</item>
+        <item quantity="other">%1$d chars</item>
+    </plurals>
+    <string name="setting_ms_per_char">Extra ms per char</string>
+    <string name="value_ms">%1$d ms</string>
+    <string name="setting_special_char_penalty">Special char penalty</string>
+
+    <string name="setting_comma_pause">Comma / semicolon / colon pause</string>
+    <string name="setting_period_pause">Period / ! / ? pause</string>
+    <string name="setting_paragraph_pause">Paragraph break pause</string>
+    <string name="unit_ms">ms</string>
+
+    <string name="setting_font_size">Font size</string>
+    <string name="value_sp">%1$d sp</string>
+    <string name="setting_font">Font</string>
+    <string name="font_monospace">Monospace</string>
+    <string name="font_sans_serif">Sans serif</string>
+    <string name="font_serif">Serif</string>
+    <string name="setting_letter_spacing">Letter spacing</string>
+    <string name="value_sp_decimal">%1$.1f sp</string>
+    <string name="setting_show_context">Show context words</string>
+    <string name="setting_previous_words">Previous words</string>
+    <string name="setting_next_words">Next words</string>
+    <string name="setting_context_line_spacing">Context line spacing</string>
+    <string name="value_multiplier">%1$.1f×</string>
+    <string name="setting_context_margins">Context margins</string>
+    <string name="value_dp">%1$d dp</string>
+
+    <!-- Book loading -->
+    <string name="error_load_failed">Failed to load book</string>
+    <string name="error_load_failed_detail">Failed to load book: %1$s</string>
+    <string name="error_cannot_open_file">Cannot open the selected file</string>
+    <string name="error_not_valid_epub">Not a valid EPUB file</string>
+    <string name="error_epub_missing_content">EPUB is damaged: content file not found</string>
+    <string name="unknown_title">Unknown title</string>
+    <string name="unknown_author">Unknown author</string>
+    <string name="chapter_default">Chapter %1$d</string>
 </resources>

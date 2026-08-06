@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.maxreader.app.R
 import com.maxreader.app.epub.EpubParser
 import com.maxreader.app.library.Bookmark
 import com.maxreader.app.library.BookLibrary
@@ -66,7 +67,12 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 library.loadBookmarks(uri)
                 _loadingState.value = LoadingState.Success
             } catch (e: Exception) {
-                _loadingState.value = LoadingState.Error(e.message ?: "Failed to load book")
+                val app = getApplication<Application>()
+                val detail = e.message
+                _loadingState.value = LoadingState.Error(
+                    if (detail.isNullOrBlank()) app.getString(R.string.error_load_failed)
+                    else app.getString(R.string.error_load_failed_detail, detail)
+                )
             }
         }
     }

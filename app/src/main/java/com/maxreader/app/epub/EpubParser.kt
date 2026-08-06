@@ -2,6 +2,7 @@ package com.maxreader.app.epub
 
 import android.content.Context
 import android.net.Uri
+import com.maxreader.app.R
 import com.maxreader.app.model.BookChapter
 import com.maxreader.app.model.BookData
 import com.maxreader.app.model.RsvpWord
@@ -102,11 +103,11 @@ object EpubParser {
 
     fun parse(context: Context, uri: Uri): BookData {
         val inputStream: InputStream = context.contentResolver.openInputStream(uri)
-            ?: throw IllegalArgumentException("Cannot open URI: $uri")
+            ?: throw IllegalArgumentException(context.getString(R.string.error_cannot_open_file))
 
         return inputStream.use { stream ->
             val entries = readZipEntries(stream)
-            parseEpub(entries)
+            parseEpub(context, entries)
         }
     }
 
@@ -125,17 +126,17 @@ object EpubParser {
         return entries
     }
 
-    private fun parseEpub(entries: Map<String, ByteArray>): BookData {
+    private fun parseEpub(context: Context, entries: Map<String, ByteArray>): BookData {
         val containerXml = entries["META-INF/container.xml"]
-            ?: throw IllegalArgumentException("Not a valid EPUB: missing container.xml")
+            ?: throw IllegalArgumentException(context.getString(R.string.error_not_valid_epub))
 
-        val opfPath = parseContainerXml(String(containerXml, Charsets.UTF_8))
+        val opfPath = parseContainerXml(context, String(containerXml, Charsets.UTF_8))
         val opfDir = opfPath.substringBeforeLast('/', "")
 
         val opfContent = entries[opfPath]
-            ?: throw IllegalArgumentException("OPF file not found: $opfPath")
+            ?: throw IllegalArgumentException(context.getString(R.string.error_epub_missing_content))
 
-        val opfData = parseOpf(String(opfContent, Charsets.UTF_8))
+        val opfData = parseOpf(context, String(opfContent, Charsets.UTF_8))
 
         var globalIdx = 0
         val chapters = opfData.spineItemPaths.mapIndexedNotNull { chapterIdx, relativePath ->
@@ -143,7 +144,7 @@ object EpubParser {
             val htmlBytes = entries[fullPath] ?: return@mapIndexedNotNull null
             val html = String(htmlBytes, Charsets.UTF_8)
 
-            parseChapter(html, chapterIdx, globalIdx).also { chapter ->
+            parseChapter(context, html, chapterIdx, globalIdx).also { chapter ->
                 globalIdx += chapter.words.size
             }
         }
@@ -155,7 +156,7 @@ object EpubParser {
         )
     }
 
-    private fun parseContainerXml(xml: String): String {
+    private fun parseContainerXml(context: Context, xml: String): String {
         val factory = XmlPullParserFactory.newInstance()
         factory.isNamespaceAware = true
         val parser = factory.newPullParser()
@@ -169,17 +170,17 @@ object EpubParser {
             }
             eventType = parser.next()
         }
-        throw IllegalArgumentException("No rootfile found in container.xml")
+        throw IllegalArgumentException(context.getString(R.string.error_not_valid_epub))
     }
 
-    private fun parseOpf(xml: String): OpfData {
+    private fun parseOpf(context: Context, xml: String): OpfData {
         val factory = XmlPullParserFactory.newInstance()
         factory.isNamespaceAware = true
         val parser = factory.newPullParser()
         parser.setInput(xml.reader())
 
-        var title = "Unknown Title"
-        var author = "Unknown Author"
+        var title = context.getString(R.string.unknown_title)
+        var author = context.getString(R.string.unknown_author)
         val manifest = mutableMapOf<String, String>()
         val spineIds = mutableListOf<String>()
 
@@ -244,6 +245,7 @@ object EpubParser {
     }
 
     private fun parseChapter(
+        context: Context,
         html: String,
         chapterIdx: Int,
         globalIdxStart: Int
@@ -267,7 +269,7 @@ object EpubParser {
         }
 
         val chapterTitle = doc.select("h1, h2, h3").firstOrNull()?.text()
-            ?: "Chapter ${chapterIdx + 1}"
+            ?: context.getString(R.string.chapter_default, chapterIdx + 1)
 
         var globalIdx = globalIdxStart
         val words = mutableListOf<RsvpWord>()

@@ -1,0 +1,98 @@
+<resources>
+
+    <!-- 主页 -->
+    <string name="home_subtitle">RSVP 速读器</string>
+    <string name="action_open_epub">打开 EPUB</string>
+    <string name="action_loading">加载中…</string>
+    <string name="action_settings">设置</string>
+    <string name="header_recent_books">最近阅读</string>
+    <string name="cd_remove_book">移除</string>
+
+    <!-- 阅读界面 -->
+    <string name="reader_empty">点击以打开书籍</string>
+    <string name="cd_back">返回</string>
+    <string name="cd_add_bookmark">添加书签</string>
+    <string name="cd_bookmarks">书签</string>
+    <string name="cd_chapters">章节</string>
+    <string name="cd_settings">设置</string>
+    <string name="cd_decrease_wpm">降低速度</string>
+    <string name="cd_increase_wpm">提高速度</string>
+    <string name="cd_rewind">后退</string>
+    <string name="cd_play_pause">播放或暂停</string>
+    <string name="cd_forward">前进</string>
+    <string name="cd_remove_bookmark">删除书签</string>
+
+    <!-- 对话框 -->
+    <string name="dialog_chapters_title">章节</string>
+    <string name="dialog_bookmarks_title">书签</string>
+    <string name="dialog_add_bookmark_title">添加书签</string>
+    <string name="dialog_jump_title">跳转到指定词</string>
+    <string name="bookmark_position">第 %1$d 词 — %2$s</string>
+    <string name="bookmark_label_hint">标签（可选）</string>
+    <string name="bookmark_default_label">第 %1$d 词</string>
+    <string name="bookmarks_empty">暂无书签</string>
+    <string name="jump_prompt">输入词序号（1–%1$d）</string>
+    <string name="action_save">保存</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_close">关闭</string>
+    <string name="action_go">跳转</string>
+
+    <!-- 设置 -->
+    <string name="settings_title">设置</string>
+    <string name="section_theme">主题</string>
+    <string name="section_speed">速度</string>
+    <string name="section_punctuation">标点停顿</string>
+    <string name="section_display">显示</string>
+
+    <string name="theme_dark">深色</string>
+    <string name="theme_amoled">AMOLED 纯黑</string>
+    <string name="theme_sepia">护眼棕</string>
+    <string name="theme_light">浅色</string>
+
+    <string name="setting_wpm">每分钟词数</string>
+    <string name="value_wpm">%1$d 词/分</string>
+    <string name="setting_ramp_up">速度渐进</string>
+    <string name="setting_ramp_up_words">渐进词数</string>
+    <plurals name="value_words">
+        <item quantity="other">%1$d 词</item>
+    </plurals>
+    <string name="setting_adaptive_speed">自适应速度</string>
+    <string name="setting_length_threshold">长度阈值</string>
+    <plurals name="value_chars">
+        <item quantity="other">%1$d 字符</item>
+    </plurals>
+    <string name="setting_ms_per_char">每多一字符增加毫秒</string>
+    <string name="value_ms">%1$d 毫秒</string>
+    <string name="setting_special_char_penalty">特殊字符附加延时</string>
+
+    <string name="setting_comma_pause">逗号 / 分号 / 冒号停顿</string>
+    <string name="setting_period_pause">句号 / ! / ? 停顿</string>
+    <string name="setting_paragraph_pause">段落间停顿</string>
+    <string name="unit_ms">毫秒</string>
+
+    <string name="setting_font_size">字号</string>
+    <string name="value_sp">%1$d sp</string>
+    <string name="setting_font">字体</string>
+    <string name="font_monospace">等宽</string>
+    <string name="font_sans_serif">无衬线</string>
+    <string name="font_serif">衬线</string>
+    <string name="setting_letter_spacing">字间距</string>
+    <string name="value_sp_decimal">%1$.1f sp</string>
+    <string name="setting_show_context">显示上下文词语</string>
+    <string name="setting_previous_words">前文词数</string>
+    <string name="setting_next_words">后文词数</string>
+    <string name="setting_context_line_spacing">上下文行距</string>
+    <string name="value_multiplier">%1$.1f×</string>
+    <string name="setting_context_margins">上下文边距</string>
+    <string name="value_dp">%1$d dp</string>
+
+    <!-- 书籍加载 -->
+    <string name="error_load_failed">无法加载书籍</string>
+    <string name="error_load_failed_detail">无法加载书籍：%1$s</string>
+    <string name="error_cannot_open_file">无法打开所选文件</string>
+    <string name="error_not_valid_epub">不是有效的 EPUB 文件</string>
+    <string name="error_epub_missing_content">EPUB 已损坏：未找到内容文件</string>
+    <string name="unknown_title">未知标题</string>
+    <string name="unknown_author">未知作者</string>
+    <string name="chapter_default">第 %1$d 章</string>
+</resources>

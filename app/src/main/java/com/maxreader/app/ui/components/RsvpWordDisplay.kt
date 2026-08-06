@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.maxreader.app.R
 import com.maxreader.app.model.RsvpWord
 import com.maxreader.app.ui.theme.*
 
@@ -44,7 +46,7 @@ fun RsvpWordDisplay(
     if (word == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = "Tap to open a book",
+                text = stringResource(R.string.reader_empty),
                 color = tc.textMuted,
                 fontSize = 20.sp
             )

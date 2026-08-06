@@ -20,10 +20,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.maxreader.app.R
 import com.maxreader.app.library.LibraryBook
 import com.maxreader.app.ui.theme.*
 import com.maxreader.app.viewmodel.LoadingState
@@ -82,7 +84,7 @@ fun HomeScreen(
             )
 
             Text(
-                text = "RSVP Speed Reader",
+                text = stringResource(R.string.home_subtitle),
                 fontSize = 14.sp,
                 color = tc.textSecondary
             )
@@ -107,9 +109,9 @@ fun HomeScreen(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Loading...", color = tc.textPrimary, fontSize = 16.sp)
+                    Text(stringResource(R.string.action_loading), color = tc.textPrimary, fontSize = 16.sp)
                 } else {
-                    Text("Open EPUB", color = tc.textPrimary, fontSize = 16.sp)
+                    Text(stringResource(R.string.action_open_epub), color = tc.textPrimary, fontSize = 16.sp)
                 }
             }
 
@@ -129,7 +131,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().height(44.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = tc.textPrimary)
             ) {
-                Text("Settings", fontSize = 15.sp)
+                Text(stringResource(R.string.action_settings), fontSize = 15.sp)
             }
 
             // Library section
@@ -137,7 +139,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "RECENT BOOKS",
+                    text = stringResource(R.string.header_recent_books).uppercase(),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = tc.accent,
@@ -215,7 +217,10 @@ private fun LibraryBookItem(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "${(book.progressPercent * 100).toInt()}%",
+                        text = stringResource(
+                            R.string.progress_percent,
+                            (book.progressPercent * 100).toInt()
+                        ),
                         color = tc.textSecondary,
                         fontSize = 11.sp
                     )
@@ -237,7 +242,7 @@ private fun LibraryBookItem(
             ) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "Remove",
+                    contentDescription = stringResource(R.string.cd_remove_book),
                     tint = tc.textMuted,
                     modifier = Modifier.size(16.dp)
                 )

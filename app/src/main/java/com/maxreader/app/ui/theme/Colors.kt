@@ -1,14 +1,16 @@
 package com.maxreader.app.ui.theme
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.maxreader.app.R
 
 // Theme definitions
-enum class AppTheme(val label: String) {
-    DARK("Dark"),
-    AMOLED("AMOLED Black"),
-    SEPIA("Sepia"),
-    LIGHT("Light")
+enum class AppTheme(@StringRes val labelRes: Int) {
+    DARK(R.string.theme_dark),
+    AMOLED(R.string.theme_amoled),
+    SEPIA(R.string.theme_sepia),
+    LIGHT(R.string.theme_light)
 }
 
 data class ThemeColors(

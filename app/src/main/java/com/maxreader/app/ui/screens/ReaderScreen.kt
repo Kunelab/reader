@@ -15,11 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.maxreader.app.R
 import com.maxreader.app.ui.components.RsvpWordDisplay
 import com.maxreader.app.ui.theme.*
 import com.maxreader.app.viewmodel.ReaderViewModel
@@ -69,7 +71,7 @@ fun ReaderScreen(
                     title = {
                         Column {
                             Text(
-                                text = bookData?.title ?: "MaxReader",
+                                text = bookData?.title ?: stringResource(R.string.app_name),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
@@ -90,21 +92,36 @@ fun ReaderScreen(
                             viewModel.saveCurrentProgress()
                             onBack()
                         }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.cd_back)
+                            )
                         }
                     },
                     actions = {
                         IconButton(onClick = { showAddBookmark = true }) {
-                            Icon(Icons.Default.BookmarkAdd, contentDescription = "Add Bookmark")
+                            Icon(
+                                Icons.Default.BookmarkAdd,
+                                contentDescription = stringResource(R.string.cd_add_bookmark)
+                            )
                         }
                         IconButton(onClick = { showBookmarks = true }) {
-                            Icon(Icons.Default.Bookmarks, contentDescription = "Bookmarks")
+                            Icon(
+                                Icons.Default.Bookmarks,
+                                contentDescription = stringResource(R.string.cd_bookmarks)
+                            )
                         }
                         IconButton(onClick = { showChapterList = true }) {
-                            Icon(Icons.Default.List, contentDescription = "Chapters")
+                            Icon(
+                                Icons.Default.List,
+                                contentDescription = stringResource(R.string.cd_chapters)
+                            )
                         }
                         IconButton(onClick = onOpenSettings) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = stringResource(R.string.cd_settings)
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -169,7 +186,7 @@ fun ReaderScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = { viewModel.setWpm(settings.wpm - 25) }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Remove, contentDescription = "- WPM", tint = tc.textPrimary, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease_wpm), tint = tc.textPrimary, modifier = Modifier.size(16.dp))
                         }
                         Text(
                             text = "${settings.wpm}",
@@ -178,7 +195,7 @@ fun ReaderScreen(
                             color = tc.accent
                         )
                         IconButton(onClick = { viewModel.setWpm(settings.wpm + 25) }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Add, contentDescription = "+ WPM", tint = tc.textPrimary, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase_wpm), tint = tc.textPrimary, modifier = Modifier.size(16.dp))
                         }
                     }
 
@@ -189,7 +206,7 @@ fun ReaderScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = { viewModel.skipBackward() }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Default.FastRewind, contentDescription = "Back", tint = tc.textPrimary, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.FastRewind, contentDescription = stringResource(R.string.cd_rewind), tint = tc.textPrimary, modifier = Modifier.size(20.dp))
                         }
                         FilledIconButton(
                             onClick = { viewModel.togglePlayPause() },
@@ -200,13 +217,13 @@ fun ReaderScreen(
                         ) {
                             Icon(
                                 imageVector = if (rsvpState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = "Play/Pause",
+                                contentDescription = stringResource(R.string.cd_play_pause),
                                 tint = tc.textPrimary,
                                 modifier = Modifier.size(26.dp)
                             )
                         }
                         IconButton(onClick = { viewModel.skipForward() }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Default.FastForward, contentDescription = "Forward", tint = tc.textPrimary, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.FastForward, contentDescription = stringResource(R.string.cd_forward), tint = tc.textPrimary, modifier = Modifier.size(20.dp))
                         }
                     }
 
@@ -218,7 +235,11 @@ fun ReaderScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${rsvpState.wordIndex + 1}/${rsvpState.totalWords}",
+                            text = stringResource(
+                                R.string.word_position,
+                                rsvpState.wordIndex + 1,
+                                rsvpState.totalWords
+                            ),
                             fontSize = 11.sp,
                             color = tc.textSecondary
                         )
@@ -249,7 +270,7 @@ fun ReaderScreen(
 
         AlertDialog(
             onDismissRequest = { showChapterList = false },
-            title = { Text("Chapters", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.dialog_chapters_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(
                     modifier = Modifier
@@ -263,7 +284,7 @@ fun ReaderScreen(
 
                         val isCurrentChapter = rsvpState.currentWord?.chapterIndex == index
                         val displayTitle = if (chapter.isContentChapter && num > 0) {
-                            "$num. ${chapter.title}"
+                            stringResource(R.string.chapter_numbered_title, num, chapter.title)
                         } else {
                             chapter.title
                         }
@@ -291,7 +312,7 @@ fun ReaderScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showChapterList = false }) {
-                    Text("Close", color = tc.accent)
+                    Text(stringResource(R.string.action_close), color = tc.accent)
                 }
             },
             containerColor = tc.surface,
@@ -302,13 +323,18 @@ fun ReaderScreen(
     // Add bookmark dialog
     if (showAddBookmark) {
         var label by remember { mutableStateOf("") }
+        val defaultLabel = stringResource(R.string.bookmark_default_label, rsvpState.wordIndex + 1)
         AlertDialog(
             onDismissRequest = { showAddBookmark = false },
-            title = { Text("Add Bookmark", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.dialog_add_bookmark_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
-                        text = "Word ${rsvpState.wordIndex + 1} — ${rsvpState.currentChapterTitle}",
+                        text = stringResource(
+                            R.string.bookmark_position,
+                            rsvpState.wordIndex + 1,
+                            rsvpState.currentChapterTitle
+                        ),
                         color = tc.textSecondary,
                         fontSize = 12.sp
                     )
@@ -316,7 +342,7 @@ fun ReaderScreen(
                     OutlinedTextField(
                         value = label,
                         onValueChange = { label = it },
-                        placeholder = { Text("Label (optional)") },
+                        placeholder = { Text(stringResource(R.string.bookmark_label_hint)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -331,15 +357,15 @@ fun ReaderScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.addBookmark(label.ifBlank { "Word ${rsvpState.wordIndex + 1}" })
+                    viewModel.addBookmark(label.ifBlank { defaultLabel })
                     showAddBookmark = false
                 }) {
-                    Text("Save", color = tc.accent)
+                    Text(stringResource(R.string.action_save), color = tc.accent)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showAddBookmark = false }) {
-                    Text("Cancel", color = tc.textSecondary)
+                    Text(stringResource(R.string.action_cancel), color = tc.textSecondary)
                 }
             },
             containerColor = tc.surface,
@@ -351,10 +377,10 @@ fun ReaderScreen(
     if (showBookmarks) {
         AlertDialog(
             onDismissRequest = { showBookmarks = false },
-            title = { Text("Bookmarks", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.dialog_bookmarks_title), fontWeight = FontWeight.Bold) },
             text = {
                 if (bookmarks.isEmpty()) {
-                    Text("No bookmarks yet", color = tc.textSecondary)
+                    Text(stringResource(R.string.bookmarks_empty), color = tc.textSecondary)
                 } else {
                     Column(
                         modifier = Modifier
@@ -392,7 +418,7 @@ fun ReaderScreen(
                                     onClick = { viewModel.removeBookmark(bm.wordIndex) },
                                     modifier = Modifier.size(32.dp)
                                 ) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove", tint = tc.textMuted, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_remove_bookmark), tint = tc.textMuted, modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -401,7 +427,7 @@ fun ReaderScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showBookmarks = false }) {
-                    Text("Close", color = tc.accent)
+                    Text(stringResource(R.string.action_close), color = tc.accent)
                 }
             },
             containerColor = tc.surface,
@@ -414,11 +440,11 @@ fun ReaderScreen(
         var jumpText by remember { mutableStateOf("${rsvpState.wordIndex + 1}") }
         AlertDialog(
             onDismissRequest = { showJumpToWord = false },
-            title = { Text("Jump to word", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.dialog_jump_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
-                        text = "Enter word number (1–${rsvpState.totalWords})",
+                        text = stringResource(R.string.jump_prompt, rsvpState.totalWords),
                         color = tc.textSecondary,
                         fontSize = 13.sp
                     )
@@ -449,12 +475,12 @@ fun ReaderScreen(
                     }
                     showJumpToWord = false
                 }) {
-                    Text("Go", color = tc.accent)
+                    Text(stringResource(R.string.action_go), color = tc.accent)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showJumpToWord = false }) {
-                    Text("Cancel", color = tc.textSecondary)
+                    Text(stringResource(R.string.action_cancel), color = tc.textSecondary)
                 }
             },
             containerColor = tc.surface,

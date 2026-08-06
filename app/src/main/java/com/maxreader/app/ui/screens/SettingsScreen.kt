@@ -12,10 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.maxreader.app.R
 import com.maxreader.app.ui.theme.*
 import com.maxreader.app.viewmodel.ReaderViewModel
 
@@ -34,10 +37,13 @@ fun SettingsScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.settings_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -55,7 +61,7 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // --- THEME ---
-                SectionHeader("Theme", tc)
+                SectionHeader(stringResource(R.string.section_theme), tc)
 
                 val themes = AppTheme.entries
                 Row(
@@ -79,7 +85,7 @@ fun SettingsScreen(
                             contentPadding = PaddingValues(vertical = 12.dp, horizontal = 4.dp)
                         ) {
                             Text(
-                                text = theme.label,
+                                text = stringResource(theme.labelRes),
                                 fontSize = 11.sp,
                                 color = previewColors.textPrimary,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -89,12 +95,12 @@ fun SettingsScreen(
                 }
 
                 // --- SPEED ---
-                SectionHeader("Speed", tc)
+                SectionHeader(stringResource(R.string.section_speed), tc)
 
                 SliderSetting(
-                    label = "Words Per Minute",
+                    label = stringResource(R.string.setting_wpm),
                     value = settings.wpm.toFloat(),
-                    valueText = "${settings.wpm} WPM",
+                    valueText = stringResource(R.string.value_wpm, settings.wpm),
                     range = 50f..1500f,
                     steps = 57,
                     onValueChange = { viewModel.setWpm(it.toInt()) },
@@ -102,7 +108,7 @@ fun SettingsScreen(
                 )
 
                 SwitchSetting(
-                    label = "Speed ramp-up",
+                    label = stringResource(R.string.setting_ramp_up),
                     checked = settings.rampUpEnabled,
                     onCheckedChange = { viewModel.setRampUpEnabled(it) },
                     tc = tc
@@ -110,9 +116,13 @@ fun SettingsScreen(
 
                 if (settings.rampUpEnabled) {
                     SliderSetting(
-                        label = "Ramp-up words",
+                        label = stringResource(R.string.setting_ramp_up_words),
                         value = settings.rampUpDurationWords.toFloat(),
-                        valueText = "${settings.rampUpDurationWords} words",
+                        valueText = pluralStringResource(
+                            R.plurals.value_words,
+                            settings.rampUpDurationWords,
+                            settings.rampUpDurationWords
+                        ),
                         range = 5f..50f,
                         steps = 8,
                         onValueChange = { viewModel.setRampUpDuration(it.toInt()) },
@@ -121,7 +131,7 @@ fun SettingsScreen(
                 }
 
                 SwitchSetting(
-                    label = "Adaptive speed",
+                    label = stringResource(R.string.setting_adaptive_speed),
                     checked = settings.adaptiveSpeed,
                     onCheckedChange = { viewModel.setAdaptiveSpeed(it) },
                     tc = tc
@@ -129,9 +139,13 @@ fun SettingsScreen(
 
                 if (settings.adaptiveSpeed) {
                     SliderSetting(
-                        label = "Length threshold",
+                        label = stringResource(R.string.setting_length_threshold),
                         value = settings.lengthThreshold.toFloat(),
-                        valueText = "${settings.lengthThreshold} chars",
+                        valueText = pluralStringResource(
+                            R.plurals.value_chars,
+                            settings.lengthThreshold,
+                            settings.lengthThreshold
+                        ),
                         range = 3f..15f,
                         steps = 11,
                         onValueChange = { viewModel.setLengthThreshold(it.toInt()) },
@@ -139,9 +153,9 @@ fun SettingsScreen(
                     )
 
                     SliderSetting(
-                        label = "Extra ms per char",
+                        label = stringResource(R.string.setting_ms_per_char),
                         value = settings.msPerExtraChar.toFloat(),
-                        valueText = "${settings.msPerExtraChar} ms",
+                        valueText = stringResource(R.string.value_ms, settings.msPerExtraChar),
                         range = 0f..100f,
                         steps = 19,
                         onValueChange = { viewModel.setMsPerExtraChar(it.toLong()) },
@@ -149,9 +163,9 @@ fun SettingsScreen(
                     )
 
                     SliderSetting(
-                        label = "Special char penalty",
+                        label = stringResource(R.string.setting_special_char_penalty),
                         value = settings.specialCharPenaltyMs.toFloat(),
-                        valueText = "${settings.specialCharPenaltyMs} ms",
+                        valueText = stringResource(R.string.value_ms, settings.specialCharPenaltyMs),
                         range = 0f..200f,
                         steps = 19,
                         onValueChange = { viewModel.setSpecialCharPenalty(it.toLong()) },
@@ -160,53 +174,58 @@ fun SettingsScreen(
                 }
 
                 // --- PUNCTUATION PAUSES ---
-                SectionHeader("Punctuation Pauses", tc)
+                SectionHeader(stringResource(R.string.section_punctuation), tc)
 
                 NumberInputSetting(
-                    label = "Comma / semicolon / colon pause",
+                    label = stringResource(R.string.setting_comma_pause),
                     value = settings.commaPauseMs,
-                    suffix = "ms",
+                    suffix = stringResource(R.string.unit_ms),
                     onValueChange = { viewModel.setCommaPause(it) },
                     tc = tc
                 )
 
                 NumberInputSetting(
-                    label = "Period / ! / ? pause",
+                    label = stringResource(R.string.setting_period_pause),
                     value = settings.periodPauseMs,
-                    suffix = "ms",
+                    suffix = stringResource(R.string.unit_ms),
                     onValueChange = { viewModel.setPeriodPause(it) },
                     tc = tc
                 )
 
                 NumberInputSetting(
-                    label = "Paragraph break pause",
+                    label = stringResource(R.string.setting_paragraph_pause),
                     value = settings.paragraphPauseMs,
-                    suffix = "ms",
+                    suffix = stringResource(R.string.unit_ms),
                     onValueChange = { viewModel.setParagraphPause(it) },
                     tc = tc
                 )
 
                 // --- DISPLAY ---
-                SectionHeader("Display", tc)
+                SectionHeader(stringResource(R.string.section_display), tc)
 
                 SliderSetting(
-                    label = "Font Size",
+                    label = stringResource(R.string.setting_font_size),
                     value = settings.fontSize.toFloat(),
-                    valueText = "${settings.fontSize} sp",
+                    valueText = stringResource(R.string.value_sp, settings.fontSize),
                     range = 20f..80f,
                     steps = 29,
                     onValueChange = { viewModel.setFontSize(it.toInt()) },
                     tc = tc
                 )
 
-                // Font family picker
-                val fontOptions = listOf("monospace", "sans-serif", "serif")
-                Text(text = "Font", color = tc.textPrimary, fontSize = 15.sp)
+                // Font family picker — the stored value is the CSS-style family name,
+                // the label next to it is what the user sees.
+                val fontOptions = listOf(
+                    "monospace" to R.string.font_monospace,
+                    "sans-serif" to R.string.font_sans_serif,
+                    "serif" to R.string.font_serif
+                )
+                Text(text = stringResource(R.string.setting_font), color = tc.textPrimary, fontSize = 15.sp)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    fontOptions.forEach { font ->
+                    fontOptions.forEach { (font, labelRes) ->
                         val isSelected = settings.fontFamily == font
                         OutlinedButton(
                             onClick = { viewModel.setFontFamily(font) },
@@ -218,7 +237,7 @@ fun SettingsScreen(
                             )
                         ) {
                             Text(
-                                text = font.replaceFirstChar { it.uppercase() },
+                                text = stringResource(labelRes),
                                 fontSize = 13.sp,
                                 color = if (isSelected) tc.accent else tc.textPrimary,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -228,9 +247,9 @@ fun SettingsScreen(
                 }
 
                 SliderSetting(
-                    label = "Letter spacing",
+                    label = stringResource(R.string.setting_letter_spacing),
                     value = settings.letterSpacing,
-                    valueText = "${"%.1f".format(settings.letterSpacing)} sp",
+                    valueText = stringResource(R.string.value_sp_decimal, settings.letterSpacing),
                     range = -2f..5f,
                     steps = 13,
                     onValueChange = { viewModel.setLetterSpacing(it) },
@@ -238,7 +257,7 @@ fun SettingsScreen(
                 )
 
                 SwitchSetting(
-                    label = "Show context words",
+                    label = stringResource(R.string.setting_show_context),
                     checked = settings.showContext,
                     onCheckedChange = { viewModel.setShowContext(it) },
                     tc = tc
@@ -246,9 +265,13 @@ fun SettingsScreen(
 
                 if (settings.showContext) {
                     SliderSetting(
-                        label = "Previous words",
+                        label = stringResource(R.string.setting_previous_words),
                         value = settings.contextWordCount.toFloat(),
-                        valueText = "${settings.contextWordCount} words",
+                        valueText = pluralStringResource(
+                            R.plurals.value_words,
+                            settings.contextWordCount,
+                            settings.contextWordCount
+                        ),
                         range = 1f..50f,
                         steps = 48,
                         onValueChange = { viewModel.setContextWordCount(it.toInt()) },
@@ -256,9 +279,13 @@ fun SettingsScreen(
                     )
 
                     SliderSetting(
-                        label = "Next words",
+                        label = stringResource(R.string.setting_next_words),
                         value = settings.nextWordCount.toFloat(),
-                        valueText = "${settings.nextWordCount} words",
+                        valueText = pluralStringResource(
+                            R.plurals.value_words,
+                            settings.nextWordCount,
+                            settings.nextWordCount
+                        ),
                         range = 0f..50f,
                         steps = 49,
                         onValueChange = { viewModel.setNextWordCount(it.toInt()) },
@@ -266,9 +293,9 @@ fun SettingsScreen(
                     )
 
                     SliderSetting(
-                        label = "Context line spacing",
+                        label = stringResource(R.string.setting_context_line_spacing),
                         value = settings.contextLineSpacing,
-                        valueText = "${"%.1f".format(settings.contextLineSpacing)}x",
+                        valueText = stringResource(R.string.value_multiplier, settings.contextLineSpacing),
                         range = 0.8f..3f,
                         steps = 21,
                         onValueChange = { viewModel.setContextLineSpacing(it) },
@@ -276,9 +303,9 @@ fun SettingsScreen(
                     )
 
                     SliderSetting(
-                        label = "Context margins",
+                        label = stringResource(R.string.setting_context_margins),
                         value = settings.contextMarginHorizontal.toFloat(),
-                        valueText = "${settings.contextMarginHorizontal} dp",
+                        valueText = stringResource(R.string.value_dp, settings.contextMarginHorizontal),
                         range = 0f..80f,
                         steps = 15,
                         onValueChange = { viewModel.setContextMargin(it.toInt()) },

@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+
+# Local configuration (contains absolute SDK paths)
+local.properties
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+
+# Android build artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+/captures
+.externalNativeBuild
+.cxx
+
+# Signing — never commit these
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# OS
+.DS_Store
+Thumbs.db

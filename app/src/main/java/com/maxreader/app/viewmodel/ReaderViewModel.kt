@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.maxreader.app.R
+import com.maxreader.app.epub.EpubException
 import com.maxreader.app.epub.EpubParser
 import com.maxreader.app.library.Bookmark
 import com.maxreader.app.library.BookLibrary
@@ -21,8 +22,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 private const val TAG = "ReaderViewModel"
+
+/**
+ * Supplies wording for anything the EPUB itself did not name. The parser leaves these
+ * blank so that it can stay free of Android resources.
+ */
+private fun BookData.withDisplayNames(app: Application): BookData = copy(
+    title = title.ifBlank { app.getString(R.string.unknown_title) },
+    author = author.ifBlank { app.getString(R.string.unknown_author) },
+    chapters = chapters.mapIndexed { index, chapter ->
+        if (chapter.title.isNotBlank()) chapter
+        else chapter.copy(title = app.getString(R.string.chapter_default, index + 1))
+    }
+)
 
 class ReaderViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -84,7 +99,10 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
             _loadingState.value = LoadingState.Loading
             val app = getApplication<Application>()
             try {
-                val book = EpubParser.parse(app, uri)
+                val parsed = app.contentResolver.openInputStream(uri)?.use { EpubParser.parse(it) }
+                    ?: throw IOException("Provider returned no stream for $uri")
+                val book = parsed.withDisplayNames(app)
+
                 _bookData.value = book
                 currentUri = uri
 
@@ -100,13 +118,23 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
             } catch (e: SecurityException) {
                 Log.w(TAG, "Lost access to $uri", e)
                 _loadingState.value = LoadingState.Error(app.getString(R.string.error_access_lost))
+            } catch (e: EpubException.MissingContent) {
+                Log.w(TAG, "Damaged EPUB at $uri", e)
+                _loadingState.value =
+                    LoadingState.Error(app.getString(R.string.error_epub_missing_content))
+            } catch (e: EpubException) {
+                Log.w(TAG, "Not a usable EPUB at $uri", e)
+                _loadingState.value =
+                    LoadingState.Error(app.getString(R.string.error_not_valid_epub))
+            } catch (e: IOException) {
+                Log.w(TAG, "Could not read $uri", e)
+                _loadingState.value =
+                    LoadingState.Error(app.getString(R.string.error_cannot_open_file))
             } catch (e: Exception) {
+                // Details go to logcat rather than the screen: exception text can carry
+                // full content:// paths, and it is not phrased for a reader anyway.
                 Log.e(TAG, "Failed to load $uri", e)
-                val detail = e.message
-                _loadingState.value = LoadingState.Error(
-                    if (detail.isNullOrBlank()) app.getString(R.string.error_load_failed)
-                    else app.getString(R.string.error_load_failed_detail, detail)
-                )
+                _loadingState.value = LoadingState.Error(app.getString(R.string.error_load_failed))
             }
         }
     }

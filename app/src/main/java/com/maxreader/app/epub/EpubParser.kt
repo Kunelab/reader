@@ -1,8 +1,6 @@
 package com.maxreader.app.epub
 
-import android.content.Context
-import android.net.Uri
-import com.maxreader.app.R
+import androidx.annotation.VisibleForTesting
 import com.maxreader.app.model.BookChapter
 import com.maxreader.app.model.BookData
 import com.maxreader.app.model.RsvpWord
@@ -13,6 +11,13 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
+/**
+ * Turns an EPUB archive into a flat stream of [RsvpWord]s.
+ *
+ * Plain Kotlin on purpose — no Context, no resources — so the tokenizing rules below can
+ * be unit tested on the JVM. Titles that the file does not supply come back blank; the
+ * caller substitutes whatever wording it wants to show.
+ */
 object EpubParser {
 
     private val PUNCTUATION_PAUSE = setOf(',', ';', ':')
@@ -42,7 +47,8 @@ object EpubParser {
      * Checks: known abbreviation list, single-letter initial (A. B. M.),
      * multiple internal dots (U.S.A.), and next-word-starts-lowercase heuristic.
      */
-    private fun isAbbreviation(word: String, nextWord: String?): Boolean {
+    @VisibleForTesting
+    internal fun isAbbreviation(word: String, nextWord: String?): Boolean {
         val stripped = word.trimEnd('"', '\'', '\u201D', '\u2019', ')', ']')
         val lower = stripped.lowercase()
 
@@ -83,7 +89,8 @@ object EpubParser {
     /**
      * Decides whether two adjacent tokens should be merged into one for RSVP display.
      */
-    private fun shouldMerge(current: String, next: String): Boolean {
+    @VisibleForTesting
+    internal fun shouldMerge(current: String, next: String): Boolean {
         // 1. Abbreviation + following word: "M." + "Sarkozy" → "M. Sarkozy"
         if (current.lastOrNull() == '.' && isAbbreviation(current, next)) return true
 
@@ -101,14 +108,9 @@ object EpubParser {
         return false
     }
 
-    fun parse(context: Context, uri: Uri): BookData {
-        val inputStream: InputStream = context.contentResolver.openInputStream(uri)
-            ?: throw IllegalArgumentException(context.getString(R.string.error_cannot_open_file))
-
-        return inputStream.use { stream ->
-            val entries = readZipEntries(stream)
-            parseEpub(context, entries)
-        }
+    fun parse(input: InputStream): BookData {
+        val entries = readZipEntries(input)
+        return parseEpub(entries)
     }
 
     private fun readZipEntries(stream: InputStream): Map<String, ByteArray> {
@@ -126,17 +128,17 @@ object EpubParser {
         return entries
     }
 
-    private fun parseEpub(context: Context, entries: Map<String, ByteArray>): BookData {
+    private fun parseEpub(entries: Map<String, ByteArray>): BookData {
         val containerXml = entries["META-INF/container.xml"]
-            ?: throw IllegalArgumentException(context.getString(R.string.error_not_valid_epub))
+            ?: throw EpubException.NotAnEpub("no META-INF/container.xml")
 
-        val opfPath = parseContainerXml(context, String(containerXml, Charsets.UTF_8))
+        val opfPath = parseContainerXml(String(containerXml, Charsets.UTF_8))
         val opfDir = opfPath.substringBeforeLast('/', "")
 
         val opfContent = entries[opfPath]
-            ?: throw IllegalArgumentException(context.getString(R.string.error_epub_missing_content))
+            ?: throw EpubException.MissingContent(opfPath)
 
-        val opfData = parseOpf(context, String(opfContent, Charsets.UTF_8))
+        val opfData = parseOpf(String(opfContent, Charsets.UTF_8))
 
         var globalIdx = 0
         val chapters = opfData.spineItemPaths.mapIndexedNotNull { chapterIdx, relativePath ->
@@ -144,7 +146,7 @@ object EpubParser {
             val htmlBytes = entries[fullPath] ?: return@mapIndexedNotNull null
             val html = String(htmlBytes, Charsets.UTF_8)
 
-            parseChapter(context, html, chapterIdx, globalIdx).also { chapter ->
+            parseChapter(html, chapterIdx, globalIdx).also { chapter ->
                 globalIdx += chapter.words.size
             }
         }
@@ -156,7 +158,7 @@ object EpubParser {
         )
     }
 
-    private fun parseContainerXml(context: Context, xml: String): String {
+    private fun parseContainerXml(xml: String): String {
         val factory = XmlPullParserFactory.newInstance()
         factory.isNamespaceAware = true
         val parser = factory.newPullParser()
@@ -170,17 +172,18 @@ object EpubParser {
             }
             eventType = parser.next()
         }
-        throw IllegalArgumentException(context.getString(R.string.error_not_valid_epub))
+        throw EpubException.NotAnEpub("no rootfile in container.xml")
     }
 
-    private fun parseOpf(context: Context, xml: String): OpfData {
+    private fun parseOpf(xml: String): OpfData {
         val factory = XmlPullParserFactory.newInstance()
         factory.isNamespaceAware = true
         val parser = factory.newPullParser()
         parser.setInput(xml.reader())
 
-        var title = context.getString(R.string.unknown_title)
-        var author = context.getString(R.string.unknown_author)
+        // Left blank when the file does not say; the caller supplies wording.
+        var title = ""
+        var author = ""
         val manifest = mutableMapOf<String, String>()
         val spineIds = mutableListOf<String>()
 
@@ -245,7 +248,6 @@ object EpubParser {
     }
 
     private fun parseChapter(
-        context: Context,
         html: String,
         chapterIdx: Int,
         globalIdxStart: Int
@@ -268,8 +270,8 @@ object EpubParser {
             }
         }
 
-        val chapterTitle = doc.select("h1, h2, h3").firstOrNull()?.text()
-            ?: context.getString(R.string.chapter_default, chapterIdx + 1)
+        // Blank when the chapter carries no heading; the caller names it.
+        val chapterTitle = doc.select("h1, h2, h3").firstOrNull()?.text().orEmpty()
 
         var globalIdx = globalIdxStart
         val words = mutableListOf<RsvpWord>()

@@ -93,7 +93,6 @@
     <!-- Carga del libro -->
     <string name="error_load_failed">No se pudo cargar el libro</string>
     <string name="error_access_lost">Este libro ya no está accesible. Ábrelo de nuevo para restaurar el acceso.</string>
-    <string name="error_load_failed_detail">No se pudo cargar el libro: %1$s</string>
     <string name="error_cannot_open_file">No se puede abrir el archivo seleccionado</string>
     <string name="error_not_valid_epub">El archivo no es un EPUB válido</string>
     <string name="error_epub_missing_content">EPUB dañado: no se encontró el archivo de contenido</string>

@@ -89,7 +89,6 @@
     <!-- 书籍加载 -->
     <string name="error_load_failed">无法加载书籍</string>
     <string name="error_access_lost">无法再访问此书籍。请重新打开以恢复访问权限。</string>
-    <string name="error_load_failed_detail">无法加载书籍：%1$s</string>
     <string name="error_cannot_open_file">无法打开所选文件</string>
     <string name="error_not_valid_epub">不是有效的 EPUB 文件</string>
     <string name="error_epub_missing_content">EPUB 已损坏：未找到内容文件</string>

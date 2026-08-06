@@ -39,6 +39,12 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
@@ -71,4 +77,10 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    testImplementation("junit:junit:4.13.2")
+    // The EPUB parser leans on XmlPullParser and jsoup, both of which are stubbed out in
+    // the plain JVM android.jar. Robolectric supplies real implementations.
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.test:core:1.5.0")
 }

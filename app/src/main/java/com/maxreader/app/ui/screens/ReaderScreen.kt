@@ -153,7 +153,7 @@ fun ReaderScreen(
                 )
             }
 
-            // Main RSVP Area — tap to toggle play/pause
+            // Main RSVP Area, tap to toggle play/pause
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -177,7 +177,7 @@ fun ReaderScreen(
             if (showControls) {
                 ReaderProgressBar(viewModel = viewModel)
 
-                // Compact control row — 3 equal columns
+                // Compact control row, 3 equal columns
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

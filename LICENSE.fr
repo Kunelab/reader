@@ -1,4 +1,4 @@
-TRADUCTION NON OFFICIELLE — À TITRE INDICATIF UNIQUEMENT
+TRADUCTION NON OFFICIELLE : À TITRE INDICATIF UNIQUEMENT
 
 Ce document est une traduction française non officielle de la licence Apache,
 version 2.0. Elle n’a pas été publiée par l’Apache Software Foundation et n’a

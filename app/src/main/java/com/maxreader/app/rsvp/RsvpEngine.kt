@@ -30,7 +30,7 @@ class RsvpEngine {
         // Characters inside words that make them harder to read in RSVP
         val SPECIAL_CHARS = setOf(
             '-',        // hyphen (light-greenish, well-known)
-            '\u2014',   // em dash —
+            '\u2014',   // em dash
             '\u2013',   // en dash –
             '\'',       // apostrophe (don't, it's)
             '\u2019',   // right single quote / curly apostrophe '

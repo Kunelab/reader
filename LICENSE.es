@@ -1,4 +1,4 @@
-TRADUCCIÓN NO OFICIAL — SOLO A TÍTULO INFORMATIVO
+TRADUCCIÓN NO OFICIAL: SOLO A TÍTULO INFORMATIVO
 
 Este documento es una traducción al español no oficial de la Licencia Apache,
 versión 2.0. No ha sido publicada por la Apache Software Foundation y carece de

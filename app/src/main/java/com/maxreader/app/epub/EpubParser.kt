@@ -34,7 +34,7 @@ private val WHITESPACE = "\\s+".toRegex()
 /**
  * Turns an EPUB archive into a flat stream of [RsvpWord]s.
  *
- * Plain Kotlin on purpose — no Context, no resources — so the tokenizing rules below can
+ * Plain Kotlin on purpose (no Context, no resources) so the tokenizing rules below can
  * be unit tested on the JVM. Titles that the file does not supply come back blank; the
  * caller substitutes whatever wording it wants to show.
  */

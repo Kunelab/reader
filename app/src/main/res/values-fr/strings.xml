@@ -27,7 +27,7 @@
     <string name="dialog_bookmarks_title">Signets</string>
     <string name="dialog_add_bookmark_title">Ajouter un signet</string>
     <string name="dialog_jump_title">Aller au mot</string>
-    <string name="bookmark_position">Mot %1$d — %2$s</string>
+    <string name="bookmark_position">Mot %1$d, %2$s</string>
     <string name="bookmark_label_hint">Libellé (facultatif)</string>
     <string name="bookmark_default_label">Mot %1$d</string>
     <string name="bookmarks_empty">Aucun signet pour l’instant</string>

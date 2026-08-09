@@ -20,7 +20,7 @@ local.properties
 .externalNativeBuild
 .cxx
 
-# Signing — never commit these
+# Signing: never commit these
 *.jks
 *.keystore
 keystore.properties

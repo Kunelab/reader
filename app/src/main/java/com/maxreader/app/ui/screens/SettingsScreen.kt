@@ -214,7 +214,7 @@ fun SettingsScreen(
                     tc = tc
                 )
 
-                // Font family picker — the stored value is the CSS-style family name,
+                // Font family picker: the stored value is the CSS-style family name,
                 // the label next to it is what the user sees.
                 val fontOptions = listOf(
                     FontChoice.MONOSPACE to R.string.font_monospace,

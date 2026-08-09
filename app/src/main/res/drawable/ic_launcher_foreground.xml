@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RSVP mark: a word as blocks, the optimal recognition point in red between the
+     reading guides. Geometry sits inside the 72x72 adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#F2F2F5"
+        android:pathData="M27.5,50.5 H38.5 A1.5,1.5 0 0 1 40,52 V56 A1.5,1.5 0 0 1 38.5,57.5 H27.5 A1.5,1.5 0 0 1 26,56 V52 A1.5,1.5 0 0 1 27.5,50.5 Z M56.5,50.5 H63.5 A1.5,1.5 0 0 1 65,52 V56 A1.5,1.5 0 0 1 63.5,57.5 H56.5 A1.5,1.5 0 0 1 55,56 V52 A1.5,1.5 0 0 1 56.5,50.5 Z M69.5,50.5 H80.5 A1.5,1.5 0 0 1 82,52 V56 A1.5,1.5 0 0 1 80.5,57.5 H69.5 A1.5,1.5 0 0 1 68,56 V52 A1.5,1.5 0 0 1 69.5,50.5 Z" />
+    <path
+        android:fillColor="#E94560"
+        android:pathData="M44.5,50.5 H50.5 A1.5,1.5 0 0 1 52,52 V56 A1.5,1.5 0 0 1 50.5,57.5 H44.5 A1.5,1.5 0 0 1 43,56 V52 A1.5,1.5 0 0 1 44.5,50.5 Z" />
+    <path
+        android:fillColor="#E94560"
+        android:pathData="M47.5,32 H47.5 A1.5,1.5 0 0 1 49,33.5 V40.5 A1.5,1.5 0 0 1 47.5,42 H47.5 A1.5,1.5 0 0 1 46,40.5 V33.5 A1.5,1.5 0 0 1 47.5,32 Z M47.5,66 H47.5 A1.5,1.5 0 0 1 49,67.5 V74.5 A1.5,1.5 0 0 1 47.5,76 H47.5 A1.5,1.5 0 0 1 46,74.5 V67.5 A1.5,1.5 0 0 1 47.5,66 Z" />
+</vector>

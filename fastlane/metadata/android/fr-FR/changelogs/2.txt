@@ -1,0 +1,2 @@
+Nouvelle icône de lancement : la marque RSVP, avec une couche monochrome qui suit
+les couleurs du système sur Android 13 et versions ultérieures.

@@ -1,0 +1,27 @@
+MaxReader is an EPUB reader that shows you one word at a time.
+
+The technique is called RSVP, for rapid serial visual presentation. Instead of moving your eyes along a line, the words come to you, appearing one after another in the same fixed spot. Nothing is scanned, nothing is re-read by accident, and the pace is yours to set.
+
+Each word is positioned so that its optimal recognition point, the character your eye naturally locks on to, sits at the same place on screen every time. That character is picked out in red, with a guide mark above and below it. Once you stop hunting for where the word begins, faster speeds become comfortable rather than frantic.
+
+READING
+
+* Anywhere from 50 to 1500 words per minute, adjustable while you read
+* Adaptive timing: longer words are held longer, and pauses lengthen at commas and full stops
+* A ramp-up so each session starts gently instead of throwing you in at full speed
+* The previous words and the sentence around them stay visible for context
+* Progress, bookmarks and a chapter list
+
+COMFORT
+
+* Light, dark, sepia and true AMOLED black themes
+* Available in English, French, Spanish and Simplified Chinese
+* Remembers where you stopped in every book
+
+PRIVATE BY CONSTRUCTION
+
+MaxReader declares no Android permissions whatsoever. Books are opened through the system file picker, so the app only ever sees the file you hand it. There is no network access, no account, no library upload, no analytics and no advertising. Your reading stays on your device.
+
+Requires Android 8.0 or later. Built with Kotlin and Jetpack Compose.
+
+Free software, released under the Apache License 2.0.

@@ -1,0 +1,5 @@
+First release.
+
+RSVP reading for EPUB books from 50 to 1500 words per minute, with the optimal
+recognition point highlighted, adaptive pauses, and light, dark, sepia and
+AMOLED themes.

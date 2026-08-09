@@ -1,0 +1,5 @@
+Première version.
+
+Lecture RSVP de livres EPUB de 50 à 1500 mots par minute, avec mise en évidence
+du point de reconnaissance optimal, pauses adaptatives, et thèmes clair, sombre,
+sépia et AMOLED.

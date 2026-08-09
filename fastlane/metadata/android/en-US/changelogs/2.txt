@@ -1,0 +1,2 @@
+New launcher icon: the RSVP mark, with a themed (monochrome) layer so it follows
+the system colours on Android 13 and later.

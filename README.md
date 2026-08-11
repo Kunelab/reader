@@ -1,4 +1,4 @@
-# Kune Reader - RSVP EPUB Speed Reader
+# KuneLab Reader - RSVP EPUB Speed Reader
 
 **English** · [Français](README.fr.md) · [Español](README.es.md) · [简体中文](README.zh-CN.md)
 
@@ -49,7 +49,7 @@ app/
 
 ## Languages
 
-The UI is translated into English, French, Spanish and Simplified Chinese. The app follows the system language; on Android 13+ you can also give it its own language from *Settings → Apps → Kune Reader → Language*.
+The UI is translated into English, French, Spanish and Simplified Chinese. The app follows the system language; on Android 13+ you can also give it its own language from _Settings → Apps → KuneLab Reader → Language_.
 
 ## License
 

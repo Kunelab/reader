@@ -1,4 +1,4 @@
-Kune Reader is an EPUB reader that shows you one word at a time.
+KuneLab Reader is an EPUB reader that shows you one word at a time.
 
 The technique is called RSVP, for rapid serial visual presentation. Instead of moving your eyes along a line, the words come to you, appearing one after another in the same fixed spot. Nothing is scanned, nothing is re-read by accident, and the pace is yours to set.
 
@@ -20,7 +20,7 @@ COMFORT
 
 PRIVATE BY CONSTRUCTION
 
-Kune Reader declares no Android permissions whatsoever. Books are opened through the system file picker, so the app only ever sees the file you hand it. There is no network access, no account, no library upload, no analytics and no advertising. Your reading stays on your device.
+KuneLab Reader declares no Android permissions whatsoever. Books are opened through the system file picker, so the app only ever sees the file you hand it. There is no network access, no account, no library upload, no analytics and no advertising. Your reading stays on your device.
 
 Requires Android 8.0 or later. Built with Kotlin and Jetpack Compose.
 

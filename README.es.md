@@ -1,4 +1,4 @@
-# Kune Reader - Lector rápido RSVP para EPUB
+# KuneLab Reader - Lector rápido RSVP para EPUB
 
 [English](README.md) · [Français](README.fr.md) · **Español** · [简体中文](README.zh-CN.md)
 
@@ -49,7 +49,7 @@ app/
 
 ## Idiomas
 
-La interfaz está traducida al inglés, francés, español y chino simplificado. La aplicación sigue el idioma del sistema; en Android 13 y posteriores también puedes asignarle un idioma propio desde *Ajustes → Aplicaciones → Kune Reader → Idioma*.
+La interfaz está traducida al inglés, francés, español y chino simplificado. La aplicación sigue el idioma del sistema; en Android 13 y posteriores también puedes asignarle un idioma propio desde _Ajustes → Aplicaciones → KuneLab Reader → Idioma_.
 
 ## Licencia
 

@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MaxReader"
+rootProject.name = "KuneReader"
 include(":app")

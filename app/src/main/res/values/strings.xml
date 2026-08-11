@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">MaxReader</string>
+    <string name="app_name" translatable="false">Kune Reader</string>
 
     <!-- Home screen -->
     <string name="home_subtitle">RSVP Speed Reader</string>

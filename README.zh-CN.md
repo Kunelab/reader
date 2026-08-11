@@ -1,4 +1,4 @@
-# MaxReader - RSVP EPUB 速读器
+# Kune Reader - RSVP EPUB 速读器
 
 [English](README.md) · [Français](README.fr.md) · [Español](README.es.md) · **简体中文**
 
@@ -49,7 +49,7 @@ app/
 
 ## 语言
 
-界面已翻译为英语、法语、西班牙语和简体中文。应用默认跟随系统语言；在 Android 13 及以上版本，也可在 *设置 → 应用 → MaxReader → 语言* 中为其单独设置语言。
+界面已翻译为英语、法语、西班牙语和简体中文。应用默认跟随系统语言；在 Android 13 及以上版本，也可在 *设置 → 应用 → Kune Reader → 语言* 中为其单独设置语言。
 
 ## 许可证
 

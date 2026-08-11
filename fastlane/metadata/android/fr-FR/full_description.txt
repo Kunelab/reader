@@ -1,4 +1,4 @@
-MaxReader est un lecteur EPUB qui vous montre un seul mot à la fois.
+Kune Reader est un lecteur EPUB qui vous montre un seul mot à la fois.
 
 La technique s'appelle la RSVP, pour présentation visuelle sérielle rapide. Au lieu de promener vos yeux le long d'une ligne, ce sont les mots qui viennent à vous, l'un après l'autre, toujours au même endroit. Rien à parcourir, aucune relecture involontaire, et c'est vous qui fixez le rythme.
 
@@ -20,7 +20,7 @@ CONFORT
 
 PRIVÉ PAR CONSTRUCTION
 
-MaxReader ne déclare aucune autorisation Android. Les livres sont ouverts via le sélecteur de fichiers du système : l'application ne voit donc que le fichier que vous lui confiez. Aucun accès réseau, aucun compte, aucun envoi de bibliothèque, aucune analyse d'audience, aucune publicité. Vos lectures restent sur votre appareil.
+Kune Reader ne déclare aucune autorisation Android. Les livres sont ouverts via le sélecteur de fichiers du système : l'application ne voit donc que le fichier que vous lui confiez. Aucun accès réseau, aucun compte, aucun envoi de bibliothèque, aucune analyse d'audience, aucune publicité. Vos lectures restent sur votre appareil.
 
 Nécessite Android 8.0 ou plus récent. Développé avec Kotlin et Jetpack Compose.
 

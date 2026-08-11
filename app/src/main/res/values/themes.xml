@@ -6,5 +6,5 @@
       background, which was wrong for the Light and Sepia themes and ignored under
       edge-to-edge anyway.
     -->
-    <style name="Theme.MaxReader" parent="android:Theme.Material.NoActionBar" />
+    <style name="Theme.KuneReader" parent="android:Theme.Material.NoActionBar" />
 </resources>

@@ -1,4 +1,4 @@
-# MaxReader - Lecteur rapide RSVP pour EPUB
+# Kune Reader - Lecteur rapide RSVP pour EPUB
 
 [English](README.md) · **Français** · [Español](README.es.md) · [简体中文](README.zh-CN.md)
 
@@ -49,7 +49,7 @@ app/
 
 ## Langues
 
-L’interface est traduite en anglais, français, espagnol et chinois simplifié. L’application suit la langue du système ; sous Android 13 et plus, vous pouvez aussi lui attribuer une langue distincte depuis *Paramètres → Applications → MaxReader → Langue*.
+L’interface est traduite en anglais, français, espagnol et chinois simplifié. L’application suit la langue du système ; sous Android 13 et plus, vous pouvez aussi lui attribuer une langue distincte depuis *Paramètres → Applications → Kune Reader → Langue*.
 
 ## Licence
 

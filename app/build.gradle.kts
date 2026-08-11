@@ -17,11 +17,11 @@ val keystoreProperties = Properties().apply {
 val hasSigningConfig = keystoreProperties.getProperty("storeFile") != null
 
 android {
-    namespace = "com.maxreader.app"
+    namespace = "io.github.kunelab.reader"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.maxreader.app"
+        applicationId = "io.github.kunelab.reader"
         minSdk = 26
         targetSdk = 34
         versionCode = 2
